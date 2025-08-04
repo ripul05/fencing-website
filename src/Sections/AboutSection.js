@@ -1,6 +1,6 @@
 export default function AboutSection() {
   return (
-    <section className="py-24 bg-gradient-to-b from-slate-50 relative overflow-hidden">
+    <section id="about-section" className="py-24 bg-gradient-to-b from-slate-50 relative overflow-hidden">
       {/* Unified Background elements - matching GallerySection */}
       <div className="absolute inset-0">
         {/* Gradient orbs - same positioning and styling as gallery */}
