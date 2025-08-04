@@ -205,7 +205,8 @@ export default function HeroSection() {
           src="/images/TFAcademyEnhanced.jpeg"
           alt="Texas Fencing Academy"
           className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
-          loading="lazy"
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-primary-900/70 via-primary-900/50 to-primary-900/70"></div>
 
@@ -325,6 +326,8 @@ export default function HeroSection() {
                     src="/sword.png"
                     alt="Fencing icon"
                     className="ml-3 w-5 h-5 group-hover:scale-110 transition-transform duration-500 filter brightness-0 invert"
+                    fetchPriority="low"
+                    decoding="async"
                   />
                 </span>
               </button>
@@ -335,4 +338,3 @@ export default function HeroSection() {
     </section>
   );
 }
-

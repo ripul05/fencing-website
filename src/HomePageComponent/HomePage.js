@@ -7,13 +7,11 @@ import GallerySection from '../Sections/GallerySection';
 import SocialMediaSection from '../Sections/SocialMediaSection';
 import FooterSection from '../Sections/FooterSection';
 import { motion } from 'framer-motion';
-import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 
 // Elegant Info Banner with sword motif
 function InfoBanner() {
   const orientationDate = process.env.REACT_APP_FENCING_CLASS_ORIENTATION_DATE;
-  console.log("Orientation Date ::", orientationDate)
   return (
     <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
       {/* Subtle sword blade pattern */}

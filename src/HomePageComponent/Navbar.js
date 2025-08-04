@@ -769,6 +769,7 @@ const Navbar = () => {
                             ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg"
                             : "text-gray-700 hover:bg-amber-50 hover:text-amber-600"
                         }`}
+                        aria-label={`Navigate to ${item.text}`}
                       >
                         <IconComponent className="w-5 h-5" />
                         <span>{item.text}</span>
@@ -785,6 +786,9 @@ const Navbar = () => {
                               ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg border-slate-700"
                               : "text-gray-700 hover:bg-amber-50 hover:text-amber-600 border-gray-300"
                           }`}
+                          aria-label={`Toggle ${item.text} dropdown menu`}
+                          aria-expanded={openDropdown === index}
+                          aria-haspopup="true"
                         >
                           <svg
                             className={`w-4 h-4 transition-transform duration-200 ${
@@ -793,6 +797,7 @@ const Navbar = () => {
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            aria-hidden="true"
                           >
                             <path
                               strokeLinecap="round"
@@ -818,6 +823,7 @@ const Navbar = () => {
                                   handleDropdownItemClick(dropdownItem, index)
                                 }
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-all duration-200 group/item text-left"
+                                aria-label={`Navigate to ${dropdownItem.text}`}
                               >
                                 <div className="w-5 h-5 flex items-center justify-center">
                                   <DropdownIconComponent
@@ -862,6 +868,7 @@ const Navbar = () => {
                     placeholder="Search ..."
                     autoFocus
                     style={{ minWidth: 80 }}
+                    aria-label="Search the website"
                   />
                 )}
                 <button
@@ -896,13 +903,15 @@ const Navbar = () => {
                 setOpenDropdown(null);
               }}
               className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-all duration-200"
-              aria-label="Toggle mobile menu"
+              aria-label="Toggle mobile navigation menu"
+              aria-expanded={isMobileMenuOpen}
             >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 {isMobileMenuOpen ? (
                   <path
@@ -951,6 +960,7 @@ const Navbar = () => {
                           ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg"
                           : "text-gray-700 hover:bg-amber-50 hover:text-amber-600"
                       }`}
+                      aria-label={`Navigate to ${item.text}`}
                     >
                       <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                         <IconComponent
@@ -973,7 +983,9 @@ const Navbar = () => {
                             ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg border-slate-700"
                             : "text-gray-700 hover:bg-amber-50 hover:text-amber-600 border-gray-300"
                         }`}
-                        aria-label={`Toggle ${item.text} dropdown`}
+                        aria-label={`Toggle ${item.text} dropdown menu`}
+                        aria-expanded={openDropdown === index}
+                        aria-haspopup="true"
                       >
                         <svg
                           className={`w-4 h-4 transition-transform duration-200 ${
@@ -982,6 +994,7 @@ const Navbar = () => {
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
@@ -1005,6 +1018,7 @@ const Navbar = () => {
                               handleDropdownItemClick(dropdownItem, index)
                             }
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-all duration-200 text-left"
+                            aria-label={`Navigate to ${dropdownItem.text}`}
                           >
                             <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                               <DropdownIconComponent
@@ -1032,6 +1046,7 @@ const Navbar = () => {
                     className="border-none outline-none bg-transparent flex-1 text-gray-700 placeholder-gray-400"
                     placeholder="Search ..."
                     autoFocus
+                    aria-label="Search the website"
                   />
                   <button
                     type="button"
@@ -1046,6 +1061,7 @@ const Navbar = () => {
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-all duration-200"
                   onClick={() => setShowSearch(true)}
+                  aria-label="Open search"
                 >
                   <SearchIcon className="w-5 h-5" />
                   <span>Search</span>

@@ -19,7 +19,6 @@ export default function FooterSection() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
     // submission logic here
   };
 
