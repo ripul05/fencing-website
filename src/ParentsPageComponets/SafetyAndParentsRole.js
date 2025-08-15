@@ -45,7 +45,7 @@ function ParentsSafetyHero() {
       {/* Background */}
       <div className="absolute inset-0">
         <img
-          src="/parentsComponent/ParentSafetyBg2.png"
+          src="/parentsComponent/ParentSafetybg2.png"
           alt="Parents Role & Safety"
           className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
           fetchPriority="high"
