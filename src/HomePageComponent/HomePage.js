@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from './Navbar';
+import InfoBanner from './InfoBanner'; // Import the separated InfoBanner
 import RegistrationSection from '../Sections/RegistrationSection';
 import HeroSection from '../Sections/HeroSection';
 import AboutSection from '../Sections/AboutSection';
@@ -9,81 +11,57 @@ import FooterSection from '../Sections/FooterSection';
 import { motion } from 'framer-motion';
 import { useRef } from 'react';
 
-// Elegant Info Banner with sword motif
-function InfoBanner() {
-  const orientationDate = process.env.REACT_APP_FENCING_CLASS_ORIENTATION_DATE;
-  return (
-    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
-      {/* Subtle sword blade pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-1/4 w-0.5 h-full bg-gradient-to-b from-transparent via-white to-transparent transform -skew-x-12"></div>
-        <div className="absolute top-0 right-1/4 w-0.5 h-full bg-gradient-to-b from-transparent via-white to-transparent transform skew-x-12"></div>
-      </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-center text-center">
-          <div className="flex items-center space-x-4">
-            {/* Elegant pulse indicator */}
-            <div className="relative">
-              <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
-              <div className="absolute inset-0 w-2 h-2 bg-amber-400 rounded-full animate-ping opacity-75"></div>
-            </div>
+import {sanityClient} from "../Sanity/sanityClient"; // Adjust path as needed
 
-            <div className="flex items-center space-x-6">
-              <span className="text-sm font-light text-slate-300 tracking-wide">
-                NEXT NEW FENCER ORIENTATION
-              </span>
-              <div className="h-4 w-px bg-amber-400/50"></div>
-              <span className="text-sm font-semibold text-white tracking-wider">
-                {orientationDate}
-              </span>
-            </div>
-
-            <a
-              href="https://texasfencingacademy.glide.page/dl/17171d"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-6 px-6 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 text-sm font-semibold rounded-md hover:from-amber-400 hover:to-amber-500 transition-all duration-300 hover:scale-105 shadow-lg"
-            >
-              SECURE YOUR SPOT
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function DelayedModal() {
+function FreeIntroClassModal() {
   const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const modalRef = useRef(null);
 
-  const rawOrientationDate = process.env.REACT_APP_FENCING_CLASS_ORIENTATION_DATE;
+  // Fetch modal data from Sanity
+  useEffect(() => {
+    sanityClient
+      .fetch(`*[_type == "freeIntroClass" && showModal == true][0]`)
+      .then((data) => {
+        console.log("Free intro class modal data:", data); // Debug log
+        setModalData(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching free intro class modal data:", error);
+        setLoading(false);
+      });
+  }, []);
 
-  // Format the date: "August 9th, 2025" → "Saturday August 9"
-  let formattedDate = "";
-  if (rawOrientationDate) {
-    const parsedDate = new Date(rawOrientationDate);
+  // Format the date: "2025-08-09" → "Saturday August 9"
+  const getFormattedDate = (dateString) => {
+    if (!dateString) return "";
+    
+    const parsedDate = new Date(dateString);
     if (!isNaN(parsedDate.getTime())) {
       const options = { weekday: 'long', month: 'long', day: 'numeric' };
-      formattedDate = parsedDate.toLocaleDateString('en-US', options); // → "Saturday, August 9"
-      formattedDate = formattedDate.replace(",", ""); // → "Saturday August 9"
-    } else {
-      formattedDate = rawOrientationDate; // fallback in case of parse error
+      const formatted = parsedDate.toLocaleDateString('en-US', options);
+      return formatted.replace(",", ""); // Remove comma between day and date
     }
-  }
+    return dateString; // fallback
+  };
 
+  // Show modal with delay
   useEffect(() => {
-    const modalShown = localStorage.getItem('openHouseModalShown');
+    if (!modalData || !modalData.showModal) return;
+
+    const modalShown = localStorage.getItem('freeIntroClassModalShown');
     if (!modalShown) {
+      const delayMs = (modalData.delaySeconds || 5) * 1000;
       const timer = setTimeout(() => {
         setShowModal(true);
-        localStorage.setItem('openHouseModalShown', 'true');
-      }, 5000);
+        localStorage.setItem('freeIntroClassModalShown', 'true');
+      }, delayMs);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [modalData]);
 
   const handleOverlayClick = (e) => {
     if (modalRef.current && !modalRef.current.contains(e.target)) {
@@ -91,7 +69,10 @@ function DelayedModal() {
     }
   };
 
-  if (!showModal) return null;
+  // Don't render anything if loading, no data, or modal shouldn't show
+  if (loading || !modalData || !modalData.showModal || !showModal) return null;
+
+  const formattedDate = getFormattedDate(modalData.classDate);
 
   return (
     <div
@@ -118,7 +99,8 @@ function DelayedModal() {
           id="modal-title"
           className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-accent-400 animate-slide-up delay-[150ms]"
         >
-          Join us for our Open House<br />
+          {modalData.title}
+          <br />
           <span className="block font-normal text-primary-200 text-base mt-1 animate-fade-in delay-[400ms]">
             {formattedDate}
           </span>
@@ -129,16 +111,16 @@ function DelayedModal() {
         </div>
 
         <p className="mb-8 text-primary-100 leading-relaxed whitespace-pre-wrap animate-fade-in delay-[800ms]">
-          Learn about fencing, see a demonstration, and try some of the moves yourself!
+          {modalData.description}
         </p>
 
         <a
-          href="/open-house"
+          href={modalData.ctaLink}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r from-accent-400 to-accent-600 text-primary-900 font-semibold text-lg transition-all duration-300 shadow-glow hover:scale-105 hover:brightness-110 hover:bg-accent-500/90 animate-pulse-slow delay-[1100ms] focus:outline-none focus:ring-4 focus:ring-accent-400/60"
         >
-          Register Now!
+          {modalData.ctaText}
           <svg
             className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
             fill="none"
@@ -154,8 +136,80 @@ function DelayedModal() {
   );
 }
 
+
 export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isScrolling, setIsScrolling] = useState(false); // NEW: Track scrolling state
+
+  // Get section from URL params
+  const urlSection = searchParams.get("section");
+
+  // Check for mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // UPDATED: Handle scrolling to sections without jumping to top
+  useEffect(() => {
+    if (urlSection && !isScrolling) {
+      setIsScrolling(true); // Prevent multiple scroll attempts
+      
+      // Use requestAnimationFrame for smooth scrolling
+      requestAnimationFrame(() => {
+        let targetElement = null;
+        
+        switch (urlSection) {
+          case "contact":
+            targetElement = document.querySelector('footer') || document.getElementById('footer-section');
+            break;
+          case "registration":
+            targetElement = document.getElementById('registration-section');
+            break;
+          case "calendar":
+            targetElement = document.getElementById('calendar-section');
+            break;
+          case "about":
+            targetElement = document.getElementById('about-section');
+            break;
+          case "gallery":
+            targetElement = document.querySelector('[data-section="gallery"]');
+            break;
+          default:
+            targetElement = document.getElementById(`${urlSection}-section`);
+        }
+
+        if (targetElement) {
+          targetElement.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start" 
+          });
+          
+          // Clear the URL parameter after scrolling to prevent re-triggering
+          setTimeout(() => {
+            setSearchParams({}, { replace: true });
+            setIsScrolling(false);
+          }, 1000); // Wait for scroll animation to complete
+        } else {
+          setIsScrolling(false);
+        }
+      });
+    }
+  }, [urlSection, isScrolling, setSearchParams]);
+
+  // UPDATED: Clear scrolling state if no section parameter
+  useEffect(() => {
+    if (!urlSection && isScrolling) {
+      setIsScrolling(false);
+    }
+  }, [urlSection, isScrolling]);
 
   const galleryImages = [
     {
@@ -185,13 +239,28 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [galleryImages.length]);
 
-  // Animation variants
+  // Mobile-optimized animation variants
   const fadeInUp = {
-    hidden: { opacity: 0, y: 60 },
+    hidden: { opacity: 0, y: isMobile ? 30 : 60 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.8, ease: "easeOut" }
+      transition: { 
+        duration: isMobile ? 0.6 : 0.8, 
+        ease: "easeOut" 
+      }
+    }
+  };
+
+  const fadeInUpFast = {
+    hidden: { opacity: 0, y: isMobile ? 20 : 40 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: isMobile ? 0.4 : 0.6, 
+        ease: "easeOut" 
+      }
     }
   };
 
@@ -200,50 +269,68 @@ export default function Home() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1
+        staggerChildren: isMobile ? 0.1 : 0.2,
+        delayChildren: isMobile ? 0.05 : 0.1
       }
     }
+  };
+
+  // Mobile-optimized viewport settings
+  const mobileViewportSettings = {
+    once: true,
+    amount: isMobile ? 0.1 : 0.3,
+    margin: isMobile ? "0px 0px -100px 0px" : "0px 0px -200px 0px"
+  };
+
+  const mobileViewportSettingsEarly = {
+    once: true,
+    amount: isMobile ? 0.05 : 0.2,
+    margin: isMobile ? "0px 0px -50px 0px" : "0px 0px -100px 0px"
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <InfoBanner />
       <Navbar />
-      <DelayedModal/>
+      <FreeIntroClassModal/>
       
+      {/* Hero Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={fadeInUp}
+        viewport={mobileViewportSettingsEarly}
+        variants={fadeInUpFast}
       >
         <HeroSection />
       </motion.div>
 
+      {/* About Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={mobileViewportSettingsEarly}
         variants={fadeInUp}
       >
         <AboutSection />
       </motion.div>
 
+      {/* Registration Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={mobileViewportSettings}
         variants={fadeInUp}
       >
         <RegistrationSection />
       </motion.div>
 
+      {/* Gallery Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={mobileViewportSettings}
         variants={staggerContainer}
+        data-section="gallery"
       >
         <GallerySection 
           galleryImages={galleryImages}
@@ -252,23 +339,25 @@ export default function Home() {
         />
       </motion.div>
 
+      {/* Social Media Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={mobileViewportSettings}
         variants={fadeInUp}
       >
         <SocialMediaSection />
       </motion.div>
+      
+      {/* Footer Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={fadeInUp}
+        viewport={mobileViewportSettings}
+        variants={fadeInUpFast}
       >
         <FooterSection />
       </motion.div>
     </div>
   );
 }
-

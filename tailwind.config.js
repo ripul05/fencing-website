@@ -6,7 +6,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary slate colors (your main grays)
         primary: {
           50: '#f8fafc',
           100: '#f1f5f9',
@@ -19,7 +18,6 @@ module.exports = {
           800: '#1e293b',
           900: '#0f172a',
         },
-        // Accent colors (your golds/ambers)
         accent: {
           50: '#fffbeb',
           100: '#fef3c7',
@@ -32,7 +30,6 @@ module.exports = {
           800: '#92400e',
           900: '#78350f',
         },
-        // Silver/metallic tones
         silver: {
           50: '#fafafa',
           100: '#f4f4f5',
@@ -64,6 +61,7 @@ module.exports = {
         'slide-up': 'slideUp 0.8s ease-out forwards',
         'slide-right': 'slideRight 0.6s ease-out forwards',
         'slide-left': 'slideLeft 0.6s ease-out forwards',
+        'fade-in-up': 'fadeInUp 0.8s ease-out forwards', // ✅ Added
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
@@ -72,34 +70,20 @@ module.exports = {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': {
-            opacity: '0',
-            transform: 'translateY(30px)'
-          },
-          '100%': {
-            opacity: '1',
-            transform: 'translateY(0px)'
-          },
+          '0%': { opacity: '0', transform: 'translateY(30px)' },
+          '100%': { opacity: '1', transform: 'translateY(0px)' },
         },
         slideRight: {
-          '0%': {
-            opacity: '0',
-            transform: 'translateX(-20px)'
-          },
-          '100%': {
-            opacity: '1',
-            transform: 'translateX(0px)'
-          },
+          '0%': { opacity: '0', transform: 'translateX(-20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0px)' },
         },
         slideLeft: {
-          '0%': {
-            opacity: '0',
-            transform: 'translateX(20px)'
-          },
-          '100%': {
-            opacity: '1',
-            transform: 'translateX(0px)'
-          },
+          '0%': { opacity: '0', transform: 'translateX(20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0px)' },
+        },
+        fadeInUp: { // ✅ New animation
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
       animationDelay: {
@@ -146,27 +130,13 @@ module.exports = {
   plugins: [
     function({ addUtilities }) {
       const newUtilities = {
-        // will-change utilities for GPU acceleration
-        '.will-change-transform-opacity': {
-          'will-change': 'transform, opacity',
-        },
-        '.will-change-transform': {
-          'will-change': 'transform',
-        },
-        '.will-change-auto': {
-          'will-change': 'auto',
-        },
-        // no animations utility for disabling animations during resize
-        '.no-animations *': {
-          'animation': 'none !important',
-          'transition': 'none !important',
-        },
-        // containment utility to limit repaint scope
-        '.contain-layout-paint': {
-          'contain': 'layout paint',
-        },
+        '.will-change-transform-opacity': { 'will-change': 'transform, opacity' },
+        '.will-change-transform': { 'will-change': 'transform' },
+        '.will-change-auto': { 'will-change': 'auto' },
+        '.no-animations *': { 'animation': 'none !important', 'transition': 'none !important' },
+        '.contain-layout-paint': { 'contain': 'layout paint' },
       };
       addUtilities(newUtilities, ['responsive', 'hover']);
     }
   ],
-}
+};
