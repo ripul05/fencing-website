@@ -19,7 +19,6 @@ export default function FooterSection() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
     // submission logic here
   };
 
@@ -312,7 +311,7 @@ export default function FooterSection() {
               </div>
               <div>
                 <span className="text-white font-semibold">Texas Fencing Academy</span>
-                <p className="text-slate-400 text-xs">Excellence since 1990</p>
+                <p className="text-slate-400 text-xs">Excellence since 1989</p>
               </div>
             </div>
 

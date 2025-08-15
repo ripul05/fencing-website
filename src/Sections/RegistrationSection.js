@@ -1,6 +1,6 @@
 export default function RegistrationSection() {
   return (
-    <section className="py-24 bg-gradient-to-b from-slate-50 to-white relative overflow-hidden">
+    <section id = "registration-section" className="py-24 bg-gradient-to-b from-slate-50 to-white relative overflow-hidden">
       {/* Elegant background patterns with subtle animations */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-20 w-72 h-72 bg-amber-400/5 rounded-full"></div>

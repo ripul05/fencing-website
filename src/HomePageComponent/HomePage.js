@@ -7,11 +7,11 @@ import GallerySection from '../Sections/GallerySection';
 import SocialMediaSection from '../Sections/SocialMediaSection';
 import FooterSection from '../Sections/FooterSection';
 import { motion } from 'framer-motion';
-import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 
 // Elegant Info Banner with sword motif
 function InfoBanner() {
+  const orientationDate = process.env.REACT_APP_FENCING_CLASS_ORIENTATION_DATE;
   return (
     <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
       {/* Subtle sword blade pattern */}
@@ -19,7 +19,7 @@ function InfoBanner() {
         <div className="absolute top-0 left-1/4 w-0.5 h-full bg-gradient-to-b from-transparent via-white to-transparent transform -skew-x-12"></div>
         <div className="absolute top-0 right-1/4 w-0.5 h-full bg-gradient-to-b from-transparent via-white to-transparent transform skew-x-12"></div>
       </div>
-      
+
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-center text-center">
           <div className="flex items-center space-x-4">
@@ -28,17 +28,17 @@ function InfoBanner() {
               <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
               <div className="absolute inset-0 w-2 h-2 bg-amber-400 rounded-full animate-ping opacity-75"></div>
             </div>
-            
+
             <div className="flex items-center space-x-6">
               <span className="text-sm font-light text-slate-300 tracking-wide">
                 NEXT NEW FENCER ORIENTATION
               </span>
               <div className="h-4 w-px bg-amber-400/50"></div>
               <span className="text-sm font-semibold text-white tracking-wider">
-                AUGUST 9TH, 2025
+                {orientationDate}
               </span>
             </div>
-            
+
             <a
               href="https://texasfencingacademy.glide.page/dl/17171d"
               target="_blank"
@@ -54,9 +54,25 @@ function InfoBanner() {
   );
 }
 
- function DelayedModal() {
+
+function DelayedModal() {
   const [showModal, setShowModal] = useState(false);
   const modalRef = useRef(null);
+
+  const rawOrientationDate = process.env.REACT_APP_FENCING_CLASS_ORIENTATION_DATE;
+
+  // Format the date: "August 9th, 2025" → "Saturday August 9"
+  let formattedDate = "";
+  if (rawOrientationDate) {
+    const parsedDate = new Date(rawOrientationDate);
+    if (!isNaN(parsedDate.getTime())) {
+      const options = { weekday: 'long', month: 'long', day: 'numeric' };
+      formattedDate = parsedDate.toLocaleDateString('en-US', options); // → "Saturday, August 9"
+      formattedDate = formattedDate.replace(",", ""); // → "Saturday August 9"
+    } else {
+      formattedDate = rawOrientationDate; // fallback in case of parse error
+    }
+  }
 
   useEffect(() => {
     const modalShown = localStorage.getItem('openHouseModalShown');
@@ -69,7 +85,6 @@ function InfoBanner() {
     }
   }, []);
 
-  // Close modal when clicking outside modal content
   const handleOverlayClick = (e) => {
     if (modalRef.current && !modalRef.current.contains(e.target)) {
       setShowModal(false);
@@ -86,66 +101,42 @@ function InfoBanner() {
       aria-labelledby="modal-title"
       onClick={handleOverlayClick}
     >
-      {/* Modal card */}
       <div
         ref={modalRef}
-        className="
-          bg-gradient-to-br from-primary-900/95 to-primary-800/95 text-white rounded-3xl
-          p-8 max-w-lg mx-4 shadow-elegant shadow-glow relative border-4 border-accent-500/30
-          animate-slide-up duration-700
-          ring-2 ring-inset ring-accent-400/40
-        "
-        onClick={(e) => e.stopPropagation()} // Prevent closing if clicking inside modal
+        className="bg-gradient-to-br from-primary-900/95 to-primary-800/95 text-white rounded-3xl p-8 max-w-lg mx-4 shadow-elegant shadow-glow relative border-4 border-accent-500/30 animate-slide-up duration-700 ring-2 ring-inset ring-accent-400/40"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           onClick={() => setShowModal(false)}
-          className="
-            absolute top-3 right-3 text-primary-200 hover:text-accent-400
-            focus:outline-none transition-transform duration-200
-            transform hover:scale-125
-            text-2xl
-          "
+          className="absolute top-3 right-3 text-primary-200 hover:text-accent-400 focus:outline-none transition-transform duration-200 transform hover:scale-125 text-2xl"
           aria-label="Close modal"
         >
           &times;
         </button>
 
-        {/* Animated Heading */}
         <h1
           id="modal-title"
-          className="
-            text-2xl md:text-3xl font-bold mb-2 tracking-tight
-            text-accent-400 animate-slide-up delay-[150ms]
-          "
+          className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-accent-400 animate-slide-up delay-[150ms]"
         >
           Join us for our Open House<br />
-          <span className="block font-normal text-primary-200 text-base mt-1 animate-fade-in delay-[400ms]">Saturday August 9</span>
+          <span className="block font-normal text-primary-200 text-base mt-1 animate-fade-in delay-[400ms]">
+            {formattedDate}
+          </span>
         </h1>
 
-        {/* Animated Divider */}
         <div className="mt-2 mb-6 flex items-center justify-center">
           <span className="h-1 w-12 rounded-full bg-accent-400/60 animate-fade-in delay-[600ms]"></span>
         </div>
 
-        {/* Body text */}
         <p className="mb-8 text-primary-100 leading-relaxed whitespace-pre-wrap animate-fade-in delay-[800ms]">
           Learn about fencing, see a demonstration, and try some of the moves yourself!
         </p>
 
-        {/* Animated Call-to-Action Button */}
         <a
           href="/open-house"
           target="_blank"
           rel="noopener noreferrer"
-          className="
-            inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full
-            bg-gradient-to-r from-accent-400 to-accent-600
-            text-primary-900 font-semibold text-lg transition-all duration-300 shadow-glow
-            hover:scale-105 hover:brightness-110 hover:bg-accent-500/90
-            animate-pulse-slow delay-[1100ms]
-            focus:outline-none focus:ring-4 focus:ring-accent-400/60
-          "
+          className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r from-accent-400 to-accent-600 text-primary-900 font-semibold text-lg transition-all duration-300 shadow-glow hover:scale-105 hover:brightness-110 hover:bg-accent-500/90 animate-pulse-slow delay-[1100ms] focus:outline-none focus:ring-4 focus:ring-accent-400/60"
         >
           Register Now!
           <svg
@@ -162,7 +153,6 @@ function InfoBanner() {
     </div>
   );
 }
-
 
 export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
