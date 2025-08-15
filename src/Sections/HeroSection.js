@@ -1,33 +1,31 @@
 import { useEffect, useState } from 'react';
 import {sanityClient} from "../Sanity/sanityClient";
 
-// GROQ query for hero section data
+// GROQ query for hero section data - Updated to fetch first document
 const HERO_QUERY = `*[_type == "heroSection"][0]{
   title {
-    firstLine,
-    secondLine,
-    thirdLine
+    first,
+    second,
+    third
   },
   tagline,
   description,
-  images {
-    backgroundImage {
-      asset-> {
-        url
-      },
-      alt
-    }
+  "backgroundImage": background.asset-> {
+    url
   },
-  callToActions {
-    primaryButton {
-      text,
-      url,
-      openInNewTab
-    },
-    secondaryButton {
-      text,
-      scrollTarget
-    }
+  "backgroundAlt": background.alt,
+  "backgroundMobileImage": backgroundMobile.asset-> {
+    url
+  },
+  "backgroundMobileAlt": backgroundMobile.alt,
+  primaryCta {
+    text,
+    url,
+    newTab
+  },
+  secondaryCta {
+    text,
+    action
   }
 }`;
 
@@ -66,15 +64,29 @@ export default function HeroSection() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Smooth scroll to registration section
-  const scrollToRegistration = () => {
-    const target = heroData?.callToActions?.secondaryButton?.scrollTarget || 'registration-section';
-    const registrationSection = document.querySelector(`#${target}`);
-    if (registrationSection) {
-      registrationSection.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
+  // Handle secondary button action (scroll or URL)
+  const handleSecondaryAction = () => {
+    const action = heroData?.secondaryCta?.action;
+    if (!action) return;
+    
+    if (action.startsWith('scroll:')) {
+      const targetId = action.replace('scroll:', '');
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    } else {
+      // Handle as URL - check if it's a relative path or full URL
+      if (action.startsWith('/')) {
+        // Relative path - navigate within same tab
+        window.location.href = action;
+      } else {
+        // Full URL - open in same tab
+        window.open(action, '_self');
+      }
     }
   };
 
@@ -102,13 +114,30 @@ export default function HeroSection() {
       }`}
     >
       <div className="absolute inset-0">
-        <img
-          src={heroData.images?.backgroundImage?.asset?.url}
-          alt={heroData.images?.backgroundImage?.alt}
-          className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
-          fetchPriority="high"
-          decoding="async"
-        />
+        {/* Responsive background image */}
+        {heroData.backgroundMobileImage ? (
+          <picture>
+            <source 
+              media="(max-width: 639px)" 
+              srcSet={heroData.backgroundMobileImage} 
+            />
+            <img
+              src={heroData.backgroundImage?.url}
+              alt={heroData.backgroundAlt}
+              className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+              fetchPriority="high"
+              decoding="async"
+            />
+          </picture>
+        ) : (
+          <img
+            src={heroData.backgroundImage?.url}
+            alt={heroData.backgroundAlt}
+            className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+            fetchPriority="high"
+            decoding="async"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-primary-900/90 via-primary-900/70 to-primary-900/90"></div>
 
         {/* Enhanced geometric patterns */}
@@ -131,13 +160,13 @@ export default function HeroSection() {
             <div className="overflow-hidden">
               <h1 className="text-hero font-extralight tracking-tight leading-none animate-slide-up delay-[800ms] will-change-transform-opacity">
                 <span className="inline-block animate-slide-up delay-[1200ms] will-change-transform-opacity">
-                  {heroData.title?.firstLine}
+                  {heroData.title?.first}
                 </span>
                 <span className="block text-accent-400 font-normal animate-slide-up delay-[1800ms] will-change-transform-opacity">
-                  {heroData.title?.secondLine}
+                  {heroData.title?.second}
                 </span>
                 <span className="inline-block animate-slide-up delay-[2400ms] will-change-transform-opacity">
-                  {heroData.title?.thirdLine}
+                  {heroData.title?.third}
                 </span>
               </h1>
             </div>
@@ -154,84 +183,92 @@ export default function HeroSection() {
 
           {/* Animated tagline and description */}
           <div className="space-y-8">
-            <div className="overflow-hidden">
-              <h2 className="text-2xl lg:text-3xl font-light text-primary-200 tracking-[0.2em] animate-slide-up delay-[3600ms] will-change-transform-opacity">
-                {heroData.tagline}
-              </h2>
-            </div>
+            {heroData.tagline && (
+              <div className="overflow-hidden">
+                <h2 className="text-2xl lg:text-3xl font-light text-primary-200 tracking-[0.2em] animate-slide-up delay-[3600ms] will-change-transform-opacity">
+                  {heroData.tagline}
+                </h2>
+              </div>
+            )}
 
-            <div className="overflow-hidden">
-              <p className="text-lg lg:text-xl text-primary-300 max-w-4xl mx-auto leading-relaxed font-light animate-fade-in delay-[4000ms] will-change-transform-opacity">
-                {heroData.description}
-              </p>
-            </div>
+            {heroData.description && (
+              <div className="overflow-hidden">
+                <p className="text-lg lg:text-xl text-primary-300 max-w-4xl mx-auto leading-relaxed font-light animate-fade-in delay-[4000ms] will-change-transform-opacity">
+                  {heroData.description}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Animated call-to-action buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center pt-12">
-            <div className="animate-slide-up delay-[4400ms] will-change-transform-opacity">
-              <a
-                href={heroData.callToActions?.primaryButton?.url}
-                target={heroData.callToActions?.primaryButton?.openInNewTab ? '_blank' : '_self'}
-                rel={heroData.callToActions?.primaryButton?.openInNewTab ? 'noopener noreferrer' : ''}
-                className="
-                  group relative inline-block px-12 py-4 
-                  bg-gradient-to-r from-accent-500 to-accent-600 
-                  text-primary-900 font-semibold text-lg 
-                  rounded-lg shadow-md
-                  overflow-hidden 
-                  transition 
-                  duration-500 ease-in-out
-                  hover:shadow-glow hover:scale-105 hover:brightness-110
-                  focus:outline-none focus:ring-4 focus:ring-accent-400/70
-                  will-change-transform
-                "
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-accent-400 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <span className="relative z-10 flex items-center justify-center">
-                  {heroData.callToActions?.primaryButton?.text}
-                  <svg
-                    className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-500"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </span>
-              </a>
-            </div>
+            {heroData.primaryCta && (
+              <div className="animate-slide-up delay-[4400ms] will-change-transform-opacity">
+                <a
+                  href={heroData.primaryCta.url}
+                  target={heroData.primaryCta.newTab ? '_blank' : '_self'}
+                  rel={heroData.primaryCta.newTab ? 'noopener noreferrer' : ''}
+                  className="
+                    group relative inline-block px-12 py-4 
+                    bg-gradient-to-r from-accent-500 to-accent-600 
+                    text-primary-900 font-semibold text-lg 
+                    rounded-lg shadow-md
+                    overflow-hidden 
+                    transition 
+                    duration-500 ease-in-out
+                    hover:shadow-glow hover:scale-105 hover:brightness-110
+                    focus:outline-none focus:ring-4 focus:ring-accent-400/70
+                    will-change-transform
+                  "
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent-400 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <span className="relative z-10 flex items-center justify-center">
+                    {heroData.primaryCta.text}
+                    <svg
+                      className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </a>
+              </div>
+            )}
 
-            <div className="animate-slide-up delay-[4600ms] will-change-transform-opacity">
-              <button
-                onClick={scrollToRegistration}
-                className="
-                  group px-12 py-4 border-2 border-white/30 
-                  text-white font-semibold text-lg 
-                  rounded-lg backdrop-blur-sm 
-                  shadow-sm 
-                  transition 
-                  duration-500 ease-in-out
-                  hover:bg-white/20 hover:border-white hover:scale-105 hover:brightness-110
-                  focus:outline-none focus:ring-4 focus:ring-white/40
-                  will-change-transform
-                "
-              >
-                <span className="flex items-center justify-center">
-                  {heroData.callToActions?.secondaryButton?.text}
-                  <img
-                    src="/sword.png"
-                    alt="Fencing icon"
-                    className="ml-3 w-5 h-5 group-hover:scale-110 transition-transform duration-500 filter brightness-0 invert"
-                    fetchPriority="low"
-                    decoding="async"
-                  />
-                </span>
-              </button>
-            </div>
+            {heroData.secondaryCta && (
+              <div className="animate-slide-up delay-[4600ms] will-change-transform-opacity">
+                <button
+                  onClick={handleSecondaryAction}
+                  className="
+                    group px-12 py-4 border-2 border-white/30 
+                    text-white font-semibold text-lg 
+                    rounded-lg backdrop-blur-sm 
+                    shadow-sm 
+                    transition 
+                    duration-500 ease-in-out
+                    hover:bg-white/20 hover:border-white hover:scale-105 hover:brightness-110
+                    focus:outline-none focus:ring-4 focus:ring-white/40
+                    will-change-transform
+                  "
+                >
+                  <span className="flex items-center justify-center">
+                    {heroData.secondaryCta.text}
+                    <img
+                      src="/sword.png"
+                      alt="Fencing icon"
+                      className="ml-3 w-5 h-5 group-hover:scale-110 transition-transform duration-500 filter brightness-0 invert"
+                      fetchPriority="low"
+                      decoding="async"
+                    />
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
