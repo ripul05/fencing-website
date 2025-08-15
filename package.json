@@ -21,7 +21,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && npm run obfuscate",
-    "obfuscate": "javascript-obfuscator build/static/js --output build/static/js --compact true --control-flow-flattening true --dead-code-injection true --string-array true --string-array-encoding base64 --string-array-threshold 0.75",
+    "obfuscate": "javascript-obfuscator build/static/js/*.chunk.js --output build/static/js --compact true --control-flow-flattening true --dead-code-injection true --string-array true --string-array-encoding base64 --string-array-threshold 0.75",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
