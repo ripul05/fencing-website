@@ -2,9 +2,64 @@
 import { useEffect, useState } from "react";
 import InfoBanner from "../HomePageComponent/InfoBanner";
 import Navbar from "../HomePageComponent/Navbar";
+import { sanityClient } from "../Sanity/sanityClient";
+import {getVideoAttributes } from '../Sanity/imageBuilder';
+import { SUMMER_CAMP_HERO_QUERY } from "../Sanity/queries";
 
-function HeroSummerCamp({ scrollToRegistration }) {
+
+
+
+// Helper to fetch hero data
+async function fetchSummerCampHero(heroSlug = "summerCamp") {
+  try {
+    const heroData = await sanityClient.fetch(SUMMER_CAMP_HERO_QUERY, { heroSlug });
+    return heroData;
+  } catch (error) {
+    console.error("Error fetching summer camp hero data:", error);
+    return null;
+  }
+}
+
+// Helper to convert campDates object to array for dynamic rendering
+function getCampSessions(campDates) {
+  if (!campDates) return [];
+  const sessions = [];
+  
+  Object.keys(campDates).forEach(key => {
+    const session = campDates[key];
+    if (session && session.title && session.dates) {
+      sessions.push({
+        title: session.title,
+        dates: session.dates
+      });
+    }
+  });
+  
+  return sessions;
+}
+
+function HeroSummerCamp({ scrollToRegistration, heroSlug = "summerCamp" }) {
+  const [heroData, setHeroData] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch hero data
+  useEffect(() => {
+    const loadHeroData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchSummerCampHero(heroSlug);
+        setHeroData(data);
+      } catch (err) {
+        setError(err);
+        console.error("Failed to load hero data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHeroData();
+  }, [heroSlug]);
 
   // Handle resize events to optimize performance
   useEffect(() => {
@@ -16,18 +71,77 @@ function HeroSummerCamp({ scrollToRegistration }) {
         setIsResizing(false);
       }, 300);
     }
-    
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       clearTimeout(resizeTimer);
     };
   }, []);
 
+  // Handle button click based on actionType
+  const handleButtonClick = () => {
+    if (!heroData?.primaryCta) {
+      scrollToRegistration();
+      return;
+    }
+    const { actionType, url, newTab } = heroData.primaryCta;
+    if (actionType === "scroll") {
+      scrollToRegistration();
+    } else if (url) {
+      if (newTab) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      } else {
+        window.location.href = url;
+      }
+    } else {
+      scrollToRegistration();
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className="relative min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-white text-xl">Loading...</div>
+      </section>
+    );
+  }
+
+  // Error state
+  if (error || !heroData) {
+    return (
+      <section className="relative min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-white text-center">
+          <h2 className="text-2xl mb-4">Unable to load hero section</h2>
+          <p className="text-gray-400">Please try refreshing the page</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Destructure data with fallbacks
+  const {
+    title,
+    tagline,
+    description,
+    campDates,
+    backgroundVideoUrl,
+    backgroundVideoMimeType,
+    backgroundVideoSize,
+    primaryCta
+  } = heroData;
+
+  const campSessions = getCampSessions(campDates);
+  const videoAttributes = getVideoAttributes({
+    url: backgroundVideoUrl,
+    mimeType: backgroundVideoMimeType,
+    size: backgroundVideoSize
+  });
+
   return (
     <section 
       className={`relative min-h-screen flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
-        isResizing ? 'no-animations' : ''
+        isResizing ? "no-animations" : ""
       }`}
     >
       {/* Background Video */}
@@ -38,17 +152,20 @@ function HeroSummerCamp({ scrollToRegistration }) {
           muted
           playsInline
           className="w-full h-full object-cover"
+          preload={videoAttributes.preload}
         >
-          <source src="/summerCamp/FencingVideo.mp4" type="video/mp4" />
+          <source 
+            src={videoAttributes.src || "/summerCamp/FencingVideo.mp4"} 
+            type={videoAttributes.type || "video/mp4"} 
+          />
           Your browser does not support the video tag.
         </video>
-        {/* Enhanced overlay for better mobile text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900/75 via-gray-800/65 to-gray-900/75 md:from-gray-900/60 md:via-gray-800/50 md:to-gray-900/60"></div>
       </div>
 
-      {/* Refined fencing motifs - hidden on mobile and during resize */}
+      {/* Refined fencing motifs */}
       <div className={`absolute inset-0 opacity-10 hidden md:block transition-opacity duration-300 ${
-        isResizing ? 'opacity-0' : 'opacity-10'
+        isResizing ? "opacity-0" : "opacity-10"
       }`}>
         <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-fade-in delay-[3000ms] will-change-transform-opacity"></div>
         <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-fade-in delay-[3500ms] will-change-transform-opacity"></div>
@@ -56,115 +173,102 @@ function HeroSummerCamp({ scrollToRegistration }) {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 md:space-y-12">
-        {/* Main heading - mobile responsive with performance optimization */}
+        {/* Main heading */}
         <div className="space-y-4 md:space-y-6">
           <div className="overflow-hidden">
             <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extralight tracking-tight leading-none text-white drop-shadow-lg will-change-transform-opacity ${
-              isResizing 
-                ? 'transition-none' 
-                : 'animate-slide-up delay-[800ms]'
+              isResizing ? "transition-none" : "animate-slide-up delay-[800ms]"
             }`}>
               <span className={`block will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-slide-up delay-[1000ms]'
+                isResizing ? "transition-none" : "animate-slide-up delay-[1000ms]"
               }`}>
-                SUMMER
+                {title?.first || "SUMMER"}
               </span>
               <span className={`block text-amber-400 font-normal drop-shadow-lg will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-slide-up delay-[1400ms]'
+                isResizing ? "transition-none" : "animate-slide-up delay-[1400ms]"
               }`}>
-                FENCING
+                {title?.second || "FENCING"}
               </span>
               <span className={`block will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-slide-up delay-[1800ms]'
+                isResizing ? "transition-none" : "animate-slide-up delay-[1800ms]"
               }`}>
-                CAMP
+                {title?.third || "CAMP"}
               </span>
             </h1>
           </div>
 
-          {/* Elegant centered divider - mobile responsive */}
+          {/* Elegant centered divider */}
           <div className={`flex items-center justify-center space-x-3 md:space-x-4 will-change-transform-opacity ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'animate-fade-in delay-[2200ms]'
+            isResizing ? "opacity-100 transition-none" : "animate-fade-in delay-[2200ms]"
           }`}>
             <div className={`w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400 will-change-transform-opacity ${
-              isResizing ? 'transition-none' : 'animate-slide-right delay-[2800ms]'
+              isResizing ? "transition-none" : "animate-slide-right delay-[2800ms]"
             }`}></div>
             <div className={`w-10 h-10 md:w-12 md:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-110 hover:border-amber-400 transition-all duration-500 will-change-transform-opacity bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm ${
-              isResizing ? 'transition-none' : 'animate-fade-in delay-[2400ms]'
+              isResizing ? "transition-none" : "animate-fade-in delay-[2400ms]"
             }`}>
               <div className={`w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-pulse delay-[2600ms]'
+                isResizing ? "transition-none" : "animate-pulse delay-[2600ms]"
               }`}></div>
             </div>
             <div className={`w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400 will-change-transform-opacity ${
-              isResizing ? 'transition-none' : 'animate-slide-left delay-[2800ms]'
+              isResizing ? "transition-none" : "animate-slide-left delay-[2800ms]"
             }`}></div>
           </div>
         </div>
 
-        {/* Excellence tagline - mobile responsive */}
+        {/* Excellence tagline */}
         <div className="overflow-hidden">
           <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-light text-white tracking-[0.1em] md:tracking-[0.15em] drop-shadow-md px-4 md:px-0 will-change-transform-opacity ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'animate-slide-up delay-[3000ms]'
+            isResizing ? "opacity-100 transition-none" : "animate-slide-up delay-[3000ms]"
           }`}>
-            TWO WEEKS OF EXCELLENCE
+            {tagline || "TWO WEEKS OF EXCELLENCE"}
           </h2>
         </div>
 
-        {/* Camp dates - mobile responsive layout */}
-        <div className={`space-y-4 md:space-y-6 will-change-transform-opacity px-4 md:px-0 ${
-          isResizing 
-            ? 'opacity-100 transition-none' 
-            : 'animate-fade-in delay-[3400ms]'
-        }`}>
-          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 md:gap-16 justify-center">
-            <div className={`will-change-transform-opacity ${
-              isResizing ? 'transition-none' : 'animate-slide-up delay-[3600ms]'
+        {/* Dynamic Camp dates */}
+        {campSessions.length > 0 && (
+          <div className={`space-y-4 md:space-y-6 will-change-transform-opacity px-4 md:px-0 ${
+            isResizing ? "opacity-100 transition-none" : "animate-fade-in delay-[3400ms]"
+          }`}>
+            <div className={`flex flex-col sm:flex-row gap-6 sm:gap-8 md:gap-16 justify-center ${
+              campSessions.length > 2 ? "flex-wrap" : ""
             }`}>
-              <h3 className="text-amber-400 font-semibold text-base md:text-lg tracking-wider mb-1 md:mb-2 drop-shadow-md">
-                SUMMER CAMP I
-              </h3>
-              <p className="text-white font-light text-lg md:text-xl drop-shadow-sm">
-                June 2-6, 2025
-              </p>
-            </div>
-            <div className={`will-change-transform-opacity ${
-              isResizing ? 'transition-none' : 'animate-slide-up delay-[3800ms]'
-            }`}>
-              <h3 className="text-amber-400 font-semibold text-base md:text-lg tracking-wider mb-1 md:mb-2 drop-shadow-md">
-                SUMMER CAMP II
-              </h3>
-              <p className="text-white font-light text-lg md:text-xl drop-shadow-sm">
-                June 9-13, 2025
-              </p>
+              {campSessions.map((session, index) => (
+                <div 
+                  key={index}
+                  className={`will-change-transform-opacity ${
+                    isResizing ? "transition-none" : `animate-slide-up delay-[${3600 + (index * 200)}ms]`
+                  }`}
+                >
+                  <h3 className="text-amber-400 font-semibold text-base md:text-lg tracking-wider mb-1 md:mb-2 drop-shadow-md">
+                    {session.title}
+                  </h3>
+                  <p className="text-white font-light text-lg md:text-xl drop-shadow-sm">
+                    {session.dates}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Description - mobile responsive */}
+        {/* Description */}
         <div className="overflow-hidden">
           <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 will-change-transform-opacity ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'animate-fade-in delay-[4000ms]'
+            isResizing ? "opacity-100 transition-none" : "animate-fade-in delay-[4000ms]"
           }`}>
-            Master the fundamentals of fencing through expert instruction,
-            teamwork, and engaging activities designed for young athletes
-            ages 6-15.
+            {description || "Master the fundamentals of fencing through expert instruction, teamwork, and engaging activities designed for young athletes ages 6-15."}
           </p>
         </div>
 
-        {/* Call-to-action button - mobile responsive */}
+        {/* Call-to-action button */}
         <div className="pt-2 md:pt-4 px-4 md:px-0">
           <div className={`will-change-transform-opacity ${
-            isResizing ? 'transition-none' : 'animate-slide-up delay-[4400ms]'
+            isResizing ? "transition-none" : "animate-slide-up delay-[4400ms]"
           }`}>
             <button
-              onClick={scrollToRegistration}
+              onClick={handleButtonClick}
               className="
                 group relative inline-block px-8 md:px-12 py-3 md:py-4 
                 bg-gradient-to-r from-amber-500 to-amber-600 
@@ -182,7 +286,7 @@ function HeroSummerCamp({ scrollToRegistration }) {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <span className="relative z-10 flex items-center justify-center">
-                REGISTER NOW
+                {primaryCta?.text || "REGISTER NOW"}
                 <img
                   src="/sword.png"
                   alt="Fencing icon"
@@ -196,7 +300,7 @@ function HeroSummerCamp({ scrollToRegistration }) {
         </div>
       </div>
 
-      {/* Add custom CSS for no-animations class */}
+      {/* Custom CSS for no-animations class */}
       <style jsx>{`
         .no-animations * {
           animation-duration: 0s !important;
@@ -987,6 +1091,27 @@ export default function SummerCampPage() {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const [heroData, setHeroData] = useState(null);
+
+  useEffect(() => {
+    // Fetch summer camp hero data
+    const fetchHeroData = async () => {
+      const query = `*[_type == "heroSection" && heroType == "summerCamp"][0]{
+        title,
+        tagline,
+        description,
+        campDates,
+        backgroundVideo,
+        primaryCta
+      }`;
+      
+      const data = await sanityClient.fetch(query);
+      setHeroData(data);
+    };
+
+    fetchHeroData();
   }, []);
 
   // Scroll to registration handler

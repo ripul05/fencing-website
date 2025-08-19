@@ -1,31 +1,6 @@
 import { useState, useEffect } from 'react'
 import { sanityFetch } from '../Sanity/sanityClient'
-
-// GROQ Query
-const LANDING_PAGE_ABOUT_QUERY = `*[_type == "landingPageAbout"][0]{
-  sectionHeader,
-  contentParagraphs,
-  blockquote,
-  callToAction,
-  video{
-    ...,
-    posterImage{
-      asset->{
-        _id,
-        url
-      },
-      alt
-    },
-    videoFile{
-      asset->{
-        _id,
-        url
-      }
-    }
-  },
-  statsWidget,
-  seo
-}`
+import { LANDING_PAGE_ABOUT_QUERY } from '../Sanity/queries'
 
 // Helper function to render emphasis text
 // Helper function to render emphasis text - FIXED VERSION

@@ -15,6 +15,7 @@ import AdultFencingPage from './ProgramNavPages/AdultFencing';
 import { CartProvider } from './StorePageComponent/Cart/CartContex';
 import ContactPage from './HomeNavPages/ContactPage'; // Import the contact page
 import ParentsRoleSafetyPage from './ParentsPageComponets/SafetyAndParentsRole';
+import CompetitiveEdgePage from './ProgramNavPages/CompetitiveTraining';
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -49,6 +50,7 @@ function App() {
             <Route path="/adultFencing" element={<AdultFencingPage />} />
             <Route path="/contact" element={<ContactPage />} /> {/* Added contact page route */}
             <Route path="/safety" element={<ParentsRoleSafetyPage />} /> {/* Cart route for store */}
+            <Route path='/competitiveEdge' element={<CompetitiveEdgePage/>}/>
           </Routes>
         </div>
       </Router>

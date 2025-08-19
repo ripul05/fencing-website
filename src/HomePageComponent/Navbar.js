@@ -65,6 +65,7 @@ const Navbar = () => {
         { text: "Youth Programs", href: "/youthFencing" },
         { text: "Adult Fencing", href: "/adultFencing" },
         { text: "Private Lessons", href: "/privateLessons" },
+        { text: "Competitive Edge", href: "/competitiveEdge" },
       ],
     },
     {

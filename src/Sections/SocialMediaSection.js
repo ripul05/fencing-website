@@ -1,14 +1,29 @@
-export default function SocialMediaSection() {
-  const instagramImages = [
-    "images/TFACoachStudent.jpg",
-    "images/MedalsVictories.jpg",
-    "images/ParisOlympicsChampionship.jpg",
-    "images/FencingStudents.jpg",
-  ];
+import { useEffect, useState } from "react";
+import { sanityClient } from "../Sanity/sanityClient";
+import { urlFor } from "../Sanity/imageBuilder";
+import { LANDING_PAGE_SOCIAL_MEDIA_QUERY } from "../Sanity/queries"; // Assuming you have a query for social media section
 
-  // Function to handle Instagram redirect
+export default function SocialMediaSection() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    sanityClient
+      .fetch(LANDING_PAGE_SOCIAL_MEDIA_QUERY)
+      .then((fetchedData) => setData(fetchedData))
+      .catch(console.error);
+  }, []);
+
+  if (!data) return <div>Loading...</div>;
+
+  // Map both WebP and JPG URLs for optimal performance
+  const instagramImages = data.gallery.map((img) => ({
+    webp: urlFor(img.image.asset).format("webp").url(),
+    jpg: urlFor(img.image.asset).format("jpg").url(),
+    alt: img.image.alt || img.description || "Instagram photo",
+  }));
+
   const handleInstagramClick = () => {
-    window.open('https://www.instagram.com/texasfencingacademy/', '_blank');
+    window.open(data.instagramUrl, "_blank");
   };
 
   return (
@@ -17,7 +32,6 @@ export default function SocialMediaSection() {
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-72 h-72 bg-accent-400/5 rounded-full animate-pulse-slow"></div>
         <div className="absolute bottom-20 right-20 w-96 h-96 bg-primary-900/5 rounded-full animate-pulse-slow delay-1000"></div>
-        
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-accent-400 to-transparent"></div>
           <div className="absolute bottom-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-400 to-transparent"></div>
@@ -25,55 +39,53 @@ export default function SocialMediaSection() {
           <div className="absolute bottom-1/4 right-1/3 w-px h-64 bg-gradient-to-b from-transparent via-primary-300 to-transparent transform -rotate-12"></div>
         </div>
       </div>
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center">
-        {/* Header section - same as before */}
+        {/* Header section */}
         <div className="mb-12 sm:mb-20">
           <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-6 sm:mb-8 animate-fade-in">
             <div className="w-8 sm:w-16 h-px bg-gradient-to-r from-transparent to-accent-500 animate-slide-up"></div>
             <div className="relative">
-              <span className="text-xs sm:text-sm font-semibold text-accent-600 tracking-[0.2em] sm:tracking-[0.3em] relative z-10">CONNECT</span>
+              <span className="text-xs sm:text-sm font-semibold text-accent-600 tracking-[0.2em] sm:tracking-[0.3em] relative z-10">
+                CONNECT
+              </span>
               <div className="absolute inset-0 bg-accent-50 rounded-full scale-150 opacity-50 animate-pulse-slow"></div>
             </div>
             <div className="w-8 sm:w-16 h-px bg-gradient-to-l from-transparent to-accent-500 animate-slide-up"></div>
           </div>
-          
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-primary-900 mb-4 sm:mb-6 animate-slide-up px-4">
-            Follow Our 
-            <span className="font-semibold text-accent-600 inline-block hover:scale-105 transition-transform duration-300"> Journey</span>
+            {data.sectionTitle.split(" ").slice(0, -1).join(" ")}{" "}
+            <span className="font-semibold text-accent-600 inline-block hover:scale-105 transition-transform duration-300">
+              {data.sectionTitle.split(" ").slice(-1)}
+            </span>
           </h2>
-          
           <p className="text-lg sm:text-xl text-primary-600 max-w-3xl mx-auto font-light leading-relaxed animate-fade-in px-4">
-            Stay connected with our community's latest achievements, 
-            training highlights, and championship moments
+            {data.sectionSubtitle}
           </p>
         </div>
-
-        {/* UPDATED Instagram Grid - Simplified hover effect for mobile */}
+        {/* Instagram Grid with WebP optimization */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 max-w-6xl mx-auto mb-12 sm:mb-16">
-          {instagramImages.map((src, index) => (
+          {instagramImages.map((img, index) => (
             <div
               key={index}
               className="group relative cursor-pointer animate-fade-in aspect-square rounded-lg sm:rounded-xl lg:rounded-2xl overflow-hidden bg-gradient-to-br from-primary-50 to-accent-50 hover:shadow-lg transition-all duration-300"
               style={{ animationDelay: `${index * 150}ms` }}
               onClick={handleInstagramClick}
             >
-              {/* Image */}
-              <img
-                src={src}
-                alt={`Championship moment ${index + 1}`}
-                className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-                loading="lazy"
-              />
-              
-              {/* SIMPLIFIED OVERLAY - Works better on mobile */}
+              <picture>
+                <source srcSet={img.webp} type="image/webp" />
+                <img
+                  src={img.jpg}
+                  alt={img.alt}
+                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                  loading="lazy"
+                />
+              </picture>
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 touch-manipulation">
-                {/* Simple Instagram Icon - Better for mobile */}
                 <div className="text-center">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-2 border border-white/30">
-                    <svg 
-                      className="w-6 h-6 sm:w-8 sm:h-8 text-white" 
-                      fill="currentColor" 
+                    <svg
+                      className="w-6 h-6 sm:w-8 sm:h-8 text-white"
+                      fill="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -85,16 +97,15 @@ export default function SocialMediaSection() {
             </div>
           ))}
         </div>
-
-        {/* Call to action - same as before */}
+        {/* Call to action */}
         <div className="text-center mt-12 sm:mt-20 px-4">
           <div className="inline-flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 px-6 sm:px-8 py-4 bg-gradient-to-r from-slate-50 to-amber-50 rounded-full border border-slate-200/50">
             <div className="flex items-center space-x-2 text-slate-600">
               <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">EXPLORE MORE</span>
+              <span className="text-sm font-medium">{data.ctaLabel}</span>
             </div>
             <a
-              href="https://www.instagram.com/texasfencingacademy/"
+              href={data.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center px-6 py-2 bg-slate-900 text-white text-sm font-semibold rounded-full hover:bg-slate-800 transition-all duration-300 hover:shadow-lg w-full sm:w-auto justify-center"
@@ -103,19 +114,20 @@ export default function SocialMediaSection() {
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
               <span className="group-hover:text-amber-400 transition-colors duration-300">
-                FOLLOW US
+                {data.ctaButtonText}
               </span>
             </a>
           </div>
         </div>
-
-        {/* Bottom decorative element - same as before */}
+        {/* Bottom decorative element */}
         <div className="mt-12 sm:mt-16 flex items-center justify-center space-x-2 sm:space-x-3 opacity-60 px-4">
           <div className="w-8 sm:w-12 h-px bg-accent-500"></div>
           <div className="w-2 sm:w-3 h-2 sm:h-3 border-2 border-accent-500 rounded-full rotate-45 flex-shrink-0">
             <div className="w-0.5 sm:w-1 h-0.5 sm:h-1 bg-accent-500 rounded-full m-auto mt-0.5"></div>
           </div>
-          <span className="text-xs sm:text-sm text-primary-500 font-light tracking-wider text-center">TEXAS FENCING ACADEMY</span>
+          <span className="text-xs sm:text-sm text-primary-500 font-light tracking-wider text-center">
+            TEXAS FENCING ACADEMY
+          </span>
           <div className="w-2 sm:w-3 h-2 sm:h-3 border-2 border-accent-500 rounded-full rotate-45 flex-shrink-0">
             <div className="w-0.5 sm:w-1 h-0.5 sm:h-1 bg-accent-500 rounded-full m-auto mt-0.5"></div>
           </div>

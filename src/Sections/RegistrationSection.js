@@ -1,4 +1,19 @@
+import React, { useEffect, useState } from 'react';
+import { sanityClient } from '../Sanity/sanityClient';
+import { urlFor } from '../Sanity/imageBuilder';
+import { REGISTRATION_SECTION_QUERY } from '../Sanity/queries';
+
 export default function RegistrationSection() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    sanityClient.fetch(REGISTRATION_SECTION_QUERY).then(fetchedData => {
+      setData(fetchedData);
+    }).catch(console.error);
+  }, []);
+
+  if (!data) return <div>Loading...</div>;
+
   return (
     <section id="registration-section" className="py-12 sm:py-24 bg-gradient-to-b from-slate-50 to-white relative overflow-hidden">
       {/* Elegant background patterns with subtle animations */}
@@ -22,13 +37,13 @@ export default function RegistrationSection() {
               {/* Enhanced logo with subtle shadows and rounding */}
               <div className="rounded-full overflow-hidden ring-1 sm:ring-2 ring-amber-500 shadow-xl group-hover:ring-amber-600 transition-all duration-400 bg-gradient-to-br from-amber-50/60 to-slate-100/40 hover:scale-105 hover:shadow-amber-400/50">
                 <img
-                  src="/images/TFALogo.jpeg"
-                  alt="TFA Pro Platform"
+                  src={urlFor(data.header.logo.asset).url()}
+                  alt={data.header.logo.alt}
                   className="w-6 sm:w-10 h-6 sm:h-10 object-contain rounded-full transition-all duration-700 hover:scale-110"
                   style={{ borderRadius: '9999px', boxShadow: '0 2px 24px 0px rgba(255,200,80,0.13)' }}
                   onError={e => {
                     e.target.style.display = "none";
-                    e.target.nextElementSibling.style.display = "block";
+                    if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = "block";
                   }}
                 />
                 {/* Minimal SVG fallback */}
@@ -41,7 +56,7 @@ export default function RegistrationSection() {
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <ellipse cx="12" cy="12" rx="8" ry="9" className="fill-amber-100"/>
+                    <ellipse cx="12" cy="12" rx="8" ry="9" className="fill-amber-100" />
                     <path d="M12 2L13.09 8.26L19 7L17.91 13.26L22 15L16.91 17.74L17 24L12 19L7 24L7.09 17.74L2 15L6.09 13.26L5 7L10.91 8.26L12 2Z" />
                   </svg>
                 </div>
@@ -51,11 +66,13 @@ export default function RegistrationSection() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-slate-900 mb-4 sm:mb-6 tracking-tight px-4">
-            Begin Your{" "}
-            <span className="font-semibold text-amber-600 hover:scale-105 transition-transform duration-300 inline-block">Journey</span>
+            {data.header.mainHeading.prefix} {' '}
+            <span className="font-semibold text-amber-600 hover:scale-105 transition-transform duration-300 inline-block">
+              {data.header.mainHeading.highlight}
+            </span>
           </h2>
           <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-light px-4">
-            Join an elite community where precision meets passion, and every lesson shapes the champion within you.
+            {data.header.subtitle}
           </p>
         </div>
 
@@ -75,41 +92,33 @@ export default function RegistrationSection() {
                     >
                       <div className="rounded-full overflow-hidden ring-2 sm:ring-4 ring-amber-200 shadow-2xl transition-all duration-500 group-hover:ring-amber-400 group-hover:scale-105">
                         <img
-                          src="/images/TFALogo.jpeg"
-                          alt="TFA Pro Platform"
+                          src={urlFor(data.platformShowcase.logo.asset).url()}
+                          alt={data.platformShowcase.logo.alt}
                           className="w-20 sm:w-24 lg:w-28 h-20 sm:h-24 lg:h-28 object-contain rounded-full transition-all duration-700 hover:scale-110"
                         />
                       </div>
                     </div>
                     <div className="flex-1 text-center sm:text-left">
                       <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-2 sm:mb-3">
-                        TFA Pro Experience
+                        {data.platformShowcase.title}
                       </h3>
                       <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
-                        Revolutionary platform combining seamless registration, personalized training insights, and direct access to world-class instruction.
+                        {data.platformShowcase.description}
                       </p>
                     </div>
                   </div>
 
                   {/* Features Grid with hover - Mobile optimized */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {[
-                      { color: "emerald", title: "Instant Enrollment", desc: "Begin within minutes" },
-                      { color: "blue", title: "Progress Tracking", desc: "Monitor development" },
-                      { color: "purple", title: "Expert Coaching", desc: "Championship instruction" },
-                      { color: "amber", title: "Flexible Scheduling", desc: "Train your way" },
-                    ].map((feature, index) => (
+                    {data.features.map((feature, index) => (
                       <div
                         key={index}
                         className="group p-4 sm:p-5 rounded-lg sm:rounded-xl border border-slate-200/50 bg-slate-50/60 shadow-sm hover:shadow-lg flex space-x-3 sm:space-x-4 items-center cursor-pointer transition-all duration-300 hover:scale-105"
-                        style={{
-                          borderColor: `rgba(16,185,129,0.14)`,
-                        }}
+                        style={{ borderColor: `rgba(16,185,129,0.14)` }}
                       >
-                        <div className={`w-3 sm:w-4 h-3 sm:h-4 rounded-full bg-${feature.color}-400/90 shadow-md group-hover:scale-125 transition-transform duration-300 flex-shrink-0`}></div>
                         <div className="min-w-0">
                           <div className="font-semibold text-slate-900 text-sm sm:text-base">{feature.title}</div>
-                          <div className="text-xs sm:text-sm text-slate-600">{feature.desc}</div>
+                          <div className="text-xs sm:text-sm text-slate-600">{feature.description}</div>
                         </div>
                       </div>
                     ))}
@@ -117,11 +126,7 @@ export default function RegistrationSection() {
 
                   {/* Stats - Mobile optimized */}
                   <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-slate-100">
-                    {[
-                      { number: "500+", label: "Active Members" },
-                      { number: "15+", label: "Expert Coaches" },
-                      { number: "35+", label: "Years Legacy" },
-                    ].map((stat, index) => (
+                    {data.statistics.map((stat, index) => (
                       <div key={index} className="text-center">
                         <div className="text-2xl sm:text-3xl font-light text-slate-900 mb-1 group-hover:text-amber-600 transition-colors duration-300">
                           {stat.number}
@@ -136,31 +141,31 @@ export default function RegistrationSection() {
               {/* Right Content: Access Portal - Mobile optimized */}
               <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 p-8 sm:p-12 lg:p-16 text-white flex flex-col items-center justify-center">
                 <div className="text-center mb-6 sm:mb-8">
-                  <h4 className="text-lg sm:text-xl font-semibold mb-2 tracking-wide">Quick Access Portal</h4>
-                  <p className="text-slate-300 text-xs sm:text-sm font-light">Scan or tap to enter the TFA universe</p>
+                  <h4 className="text-lg sm:text-xl font-semibold mb-2 tracking-wide">{data.accessPortal.title}</h4>
+                  <p className="text-slate-300 text-xs sm:text-sm font-light">{data.accessPortal.subtitle}</p>
                 </div>
-                
+
                 {/* QR Code with hover effect - Mobile responsive */}
                 <div className="relative mb-6 sm:mb-10 group">
                   <div className="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 lg:p-8 shadow-xl border-2 border-slate-200 group-hover:border-amber-400 transition duration-300">
                     <img
-                      src="https://texasfencingacademy.org/wp-content/uploads/2025/05/TFA-Pro-v2-qrcode_v3.jpg"
-                      alt="TFA Pro QR Code"
+                      src={urlFor(data.accessPortal.qrCode.asset).url()}
+                      alt={data.accessPortal.qrCode.alt}
                       className="w-24 sm:w-28 lg:w-32 h-24 sm:h-28 lg:h-32 object-contain mx-auto group-hover:scale-105 transition-all duration-400"
                     />
                   </div>
                   <div className="absolute inset-0 pointer-events-none rounded-lg sm:rounded-xl group-hover:ring-4 group-hover:ring-amber-400/40 transition"></div>
                 </div>
-                
+
                 {/* Portal Button with animation - Mobile optimized */}
                 <a
-                  href="https://texasfencingacademy.glide.page"
-                  target="_blank"
+                  href={data.accessPortal.ctaButton.url}
+                  target={data.accessPortal.ctaButton.openInNewTab ? "_blank" : "_self"}
                   rel="noopener noreferrer"
                   className="group w-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-lg transition-all duration-300 hover:shadow-xl hover:scale-105 hover:shadow-amber-500/25 flex items-center justify-center text-sm sm:text-base"
                 >
                   <span className="flex items-center">
-                    START YOUR JOURNEY
+                    {data.accessPortal.ctaButton.text}
                     <svg className="ml-2 sm:ml-3 w-4 sm:w-5 h-4 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
@@ -170,7 +175,8 @@ export default function RegistrationSection() {
                     </svg>
                   </span>
                 </a>
-                <p className="text-center text-xs text-slate-400 mt-3 leading-relaxed px-2">No app download required • Instant access to our community</p>
+
+                <p className="text-center text-xs text-slate-400 mt-3 leading-relaxed px-2">{data.accessPortal.disclaimer}</p>
               </div>
             </div>
           </div>
@@ -179,11 +185,11 @@ export default function RegistrationSection() {
         {/* Bottom Quote - Mobile optimized */}
         <div className="text-center mt-12 sm:mt-20 px-4">
           <blockquote className="text-slate-600 italic text-base sm:text-lg max-w-2xl mx-auto mb-4 transition-colors duration-300 hover:text-amber-600">
-            "Excellence isn't a destination, it's a way of traveling. Begin your journey with purpose and precision."
+            "{data.bottomQuote.quote}"
           </blockquote>
           <div className="flex items-center justify-center space-x-2 sm:space-x-3">
             <div className="w-8 sm:w-12 h-px bg-amber-500"></div>
-            <span className="text-xs sm:text-sm text-slate-500 font-light tracking-wider">TEXAS FENCING ACADEMY</span>
+            <span className="text-xs sm:text-sm text-slate-500 font-light tracking-wider">{data.bottomQuote.attribution}</span>
             <div className="w-8 sm:w-12 h-px bg-amber-500"></div>
           </div>
         </div>

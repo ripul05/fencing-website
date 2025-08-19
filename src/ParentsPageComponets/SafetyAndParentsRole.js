@@ -5,8 +5,30 @@ import InfoBanner from "../HomePageComponent/InfoBanner";
 /* ==================== HERO SECTION ==================== */
 import { useState, useEffect } from 'react';
 
+import { sanityClient } from "../Sanity/sanityClient";
+import { urlFor } from "../Sanity/imageBuilder";
+
+const HERO_QUERY = `*[_type=="heroSection" && slug.current=="parentsRole-section"][0]{
+  title { first, second, third },
+  tagline,
+  description,
+  background { asset, alt },
+  backgroundMobile { asset, alt },
+  primaryCta { text, url, newTab },
+  secondaryCta { text, action }
+}`;
+
 function ParentsSafetyHero() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    sanityClient.fetch(HERO_QUERY).then(res => {
+      setData(res);
+      setLoading(false);
+    });
+  }, []);
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
@@ -15,6 +37,18 @@ function ParentsSafetyHero() {
         behavior: "smooth",
         block: "start",
       });
+    }
+  };
+
+  const runSecondary = () => {
+    const a = data?.secondaryCta?.action;
+    if (!a) return;
+    if (a.startsWith('scroll:')) {
+      document.getElementById(a.replace('scroll:', ''))?.scrollIntoView({ behavior: 'smooth' });
+    } else if (a.startsWith('/')) {
+      window.location.href = a;
+    } else {
+      window.open(a, '_self');
     }
   };
 
@@ -36,23 +70,177 @@ function ParentsSafetyHero() {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <section className="min-h-screen flex items-center justify-center bg-gray-900">
+        <p className="text-white text-xl animate-pulse">Loading...</p>
+      </section>
+    );
+  }
+
+  if (!data) {
+    return (
+      <section 
+        className={`relative min-h-screen flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
+          isResizing ? 'no-animations' : ''
+        }`}
+      >
+        {/* Fallback Background */}
+        <div className="absolute inset-0">
+          <img
+            src="/parentsComponent/ParentSafetyBg2.png"
+            alt="Parents Role & Safety"
+            className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+            fetchPriority="high"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 md:from-gray-900/60 md:via-gray-800/50 md:to-gray-900/60"></div>
+        </div>
+
+        {/* Refined fencing motifs - hidden on mobile and during resize */}
+        <div className={`absolute inset-0 opacity-10 hidden md:block transition-opacity duration-300 ${
+          isResizing ? 'opacity-0' : 'opacity-10'
+        }`}>
+          <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-pulse will-change-transform-opacity"></div>
+          <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-pulse will-change-transform-opacity"></div>
+          <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent transform rotate-45 animate-pulse will-change-transform-opacity"></div>
+        </div>
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 md:space-y-12">
+          <div className="space-y-4 md:space-y-6">
+            <div className="overflow-hidden">
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg will-change-transform-opacity ${
+                isResizing 
+                  ? 'transition-none' 
+                  : 'animate-slide-up delay-[800ms]'
+              }`}>
+                <span className={`block will-change-transform-opacity ${
+                  isResizing ? 'transition-none' : 'animate-slide-up delay-[1000ms]'
+                }`}>
+                  PARENTS ROLE &
+                </span>
+                <span className={`block text-amber-400 font-normal drop-shadow-lg will-change-transform-opacity ${
+                  isResizing ? 'transition-none' : 'animate-slide-up delay-[1400ms]'
+                }`}>
+                  SAFETY
+                </span>
+                <span className={`block will-change-transform-opacity ${
+                  isResizing ? 'transition-none' : 'animate-slide-up delay-[1800ms]'
+                }`}>
+                  IN FENCING
+                </span>
+              </h1>
+            </div>
+
+            <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
+              isResizing 
+                ? 'opacity-100 transition-none' 
+                : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
+            }`}>
+              <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
+              <div className="w-10 h-10 md:w-12 md:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-110 hover:border-amber-400 transition-all duration-500 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm will-change-transform">
+                <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full animate-pulse"></div>
+              </div>
+              <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
+            </div>
+          </div>
+
+          <div className="overflow-hidden">
+            <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-light text-white tracking-[0.1em] md:tracking-[0.15em] drop-shadow-md px-4 md:px-0 will-change-transform-opacity ${
+              isResizing 
+                ? 'opacity-100 transition-none' 
+                : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_2s_forwards]'
+            }`}>
+              ENSURING SAFETY, RESPECT & EXCELLENCE
+            </h2>
+          </div>
+
+          <div className="overflow-hidden">
+            <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 will-change-transform-opacity ${
+              isResizing 
+                ? 'opacity-100 transition-none' 
+                : 'opacity-0 animate-[fadeIn_0.8s_ease-out_2.5s_forwards]'
+            }`}>
+              Learn how modern technology, strict safety gear standards, and a strong code of etiquette keep fencing one of the world's safest sports.
+            </p>
+          </div>
+
+          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 px-4 md:px-0 will-change-transform-opacity ${
+            isResizing 
+              ? 'opacity-100 transition-none' 
+              : 'animate-[fadeInUp_0.8s_ease-out_1s_forwards]'
+          }`}>
+            <button
+              onClick={() => scrollToSection("parents-role-safety")}
+              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                isResizing 
+                  ? 'opacity-100 transition-none' 
+                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              <span className="relative z-10">Parents & Safety</span>
+            </button>
+
+            <button
+              onClick={() => scrollToSection("safety-info")}
+              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                isResizing 
+                  ? 'opacity-100 transition-none' 
+                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="relative z-10">View Safety Rules</span>
+            </button>
+          </div>
+        </div>
+
+        <style jsx>{`
+          .no-animations * {
+            animation-duration: 0s !important;
+            animation-delay: 0s !important;
+            transition-duration: 0s !important;
+          }
+        `}</style>
+      </section>
+    );
+  }
+
+  const desktopImg = urlFor(data.background.asset).width(1920).format('webp').quality(80).url();
+  const mobileImg = data.backgroundMobile?.asset
+    ? urlFor(data.backgroundMobile.asset).width(768).format('webp').quality(75).url()
+    : null;
+
   return (
     <section 
       className={`relative min-h-screen flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
         isResizing ? 'no-animations' : ''
       }`}
     >
-      {/* Background */}
+      {/* Background image + overlay */}
       <div className="absolute inset-0">
-        <img
-          src="/parentsComponent/ParentSafetybg2.png"
-          alt="Parents Role & Safety"
-          className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
-          fetchPriority="high"
-          decoding="async"
-        />
-        {/* Enhanced overlay for better mobile text readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 md:from-gray-900/60 md:via-gray-800/50 md:to-gray-900/60"></div>
+        {mobileImg ? (
+          <picture>
+            <source media="(max-width:639px)" srcSet={mobileImg} />
+            <img
+              src={desktopImg}
+              alt={data.background.alt || "Parents Role & Safety"}
+              className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+              fetchPriority="high"
+              decoding="async"
+            />
+          </picture>
+        ) : (
+          <img
+            src={desktopImg}
+            alt={data.background.alt || "Parents Role & Safety"}
+            className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+            fetchPriority="high"
+            decoding="async"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 md:from-gray-900/60 md:via-gray-800/50 md:to-gray-900/60" />
       </div>
 
       {/* Refined fencing motifs - hidden on mobile and during resize */}
@@ -64,8 +252,8 @@ function ParentsSafetyHero() {
         <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent transform rotate-45 animate-pulse will-change-transform-opacity"></div>
       </div>
 
+      {/* Text & CTAs */}
       <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 md:space-y-12">
-        {/* Main heading - mobile responsive with performance optimization */}
         <div className="space-y-4 md:space-y-6">
           <div className="overflow-hidden">
             <h1 className={`text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg will-change-transform-opacity ${
@@ -76,94 +264,144 @@ function ParentsSafetyHero() {
               <span className={`block will-change-transform-opacity ${
                 isResizing ? 'transition-none' : 'animate-slide-up delay-[1000ms]'
               }`}>
-                PARENTS ROLE &
+                {data.title.first}
               </span>
               <span className={`block text-amber-400 font-normal drop-shadow-lg will-change-transform-opacity ${
                 isResizing ? 'transition-none' : 'animate-slide-up delay-[1400ms]'
               }`}>
-                SAFETY
+                {data.title.second}
               </span>
               <span className={`block will-change-transform-opacity ${
                 isResizing ? 'transition-none' : 'animate-slide-up delay-[1800ms]'
               }`}>
-                IN FENCING
+                {data.title.third}
               </span>
             </h1>
           </div>
 
-          {/* Elegant centered divider - mobile responsive */}
           <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
             isResizing 
               ? 'opacity-100 transition-none' 
               : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
           }`}>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
+            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
             <div className="w-10 h-10 md:w-12 md:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-110 hover:border-amber-400 transition-all duration-500 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm will-change-transform">
-              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full animate-pulse"></div>
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full animate-pulse" />
             </div>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
+            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
-        {/* Excellence tagline - mobile responsive */}
-        <div className="overflow-hidden">
-          <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-light text-white tracking-[0.1em] md:tracking-[0.15em] drop-shadow-md px-4 md:px-0 will-change-transform-opacity ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_2s_forwards]'
-          }`}>
-            ENSURING SAFETY, RESPECT & EXCELLENCE
-          </h2>
-        </div>
+        {data.tagline && (
+          <div className="overflow-hidden">
+            <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-light text-white tracking-[0.1em] md:tracking-[0.15em] drop-shadow-md px-4 md:px-0 will-change-transform-opacity ${
+              isResizing 
+                ? 'opacity-100 transition-none' 
+                : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_2s_forwards]'
+            }`}>
+              {data.tagline}
+            </h2>
+          </div>
+        )}
 
-        {/* Description - mobile responsive */}
-        <div className="overflow-hidden">
-          <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 will-change-transform-opacity ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'opacity-0 animate-[fadeIn_0.8s_ease-out_2.5s_forwards]'
-          }`}>
-            Learn how modern technology, strict safety gear standards, and a strong code of etiquette keep fencing one of the world's safest sports.
-          </p>
-        </div>
+        {data.description && (
+          <div className="overflow-hidden">
+            <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 will-change-transform-opacity ${
+              isResizing 
+                ? 'opacity-100 transition-none' 
+                : 'opacity-0 animate-[fadeIn_0.8s_ease-out_2.5s_forwards]'
+            }`}>
+              {data.description}
+            </p>
+          </div>
+        )}
 
-        {/* Action Buttons - mobile responsive with performance optimization */}
         <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 px-4 md:px-0 will-change-transform-opacity ${
           isResizing 
             ? 'opacity-100 transition-none' 
             : 'animate-[fadeInUp_0.8s_ease-out_1s_forwards]'
         }`}>
-          {/* Parents & Safety Button */}
-          <button
-            onClick={() => scrollToSection("parents-role-safety")}
-            className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
-            }`}
-          >
-            {/* Button shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            <span className="relative z-10">Parents & Safety</span>
-          </button>
+          {data.primaryCta ? (
+            data.primaryCta.url && data.primaryCta.url.startsWith('http') ? (
+              // External link - use anchor tag
+              <a
+                href={data.primaryCta.url}
+                target={data.primaryCta.newTab ? '_blank' : '_self'}
+                rel={data.primaryCta.newTab ? 'noopener noreferrer' : ''}
+                className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                  isResizing 
+                    ? 'opacity-100 transition-none' 
+                    : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
+                }`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <span className="relative z-10">{data.primaryCta.text}</span>
+              </a>
+            ) : (
+              // Internal scroll - use button with scroll functionality
+              <button
+                onClick={() => {
+                  if (data.primaryCta.url && data.primaryCta.url.startsWith('#')) {
+                    scrollToSection(data.primaryCta.url.replace('#', ''));
+                  } else if (data.primaryCta.url && data.primaryCta.url.startsWith('scroll:')) {
+                    scrollToSection(data.primaryCta.url.replace('scroll:', ''));
+                  } else {
+                    scrollToSection("parents-role-safety");
+                  }
+                }}
+                className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                  isResizing 
+                    ? 'opacity-100 transition-none' 
+                    : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
+                }`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <span className="relative z-10">{data.primaryCta.text}</span>
+              </button>
+            )
+          ) : (
+            // Fallback button
+            <button
+              onClick={() => scrollToSection("parents-role-safety")}
+              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                isResizing 
+                  ? 'opacity-100 transition-none' 
+                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              <span className="relative z-10">Parents & Safety</span>
+            </button>
+          )}
 
-          {/* View Safety Rules Button */}
-          <button
-            onClick={() => scrollToSection("safety-info")}
-            className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
-            }`}
-          >
-            {/* Button glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <span className="relative z-10">View Safety Rules</span>
-          </button>
+          {data.secondaryCta ? (
+            <button
+              onClick={runSecondary}
+              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                isResizing 
+                  ? 'opacity-100 transition-none' 
+                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <span className="relative z-10">{data.secondaryCta.text}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => scrollToSection("safety-info")}
+              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
+                isResizing 
+                  ? 'opacity-100 transition-none' 
+                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="relative z-10">View Safety Rules</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Add custom CSS for no-animations class */}
       <style jsx>{`
         .no-animations * {
           animation-duration: 0s !important;
@@ -174,7 +412,6 @@ function ParentsSafetyHero() {
     </section>
   );
 }
-
 
 
 /* ==================== INFORMATION SECTION ==================== */
