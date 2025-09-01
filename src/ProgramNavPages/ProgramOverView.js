@@ -294,7 +294,16 @@ function ProgramsAndScheduleSection() {
   useEffect(() => {
     sanityClient
       .fetch(PROGRAM_QUERIES.PROGRAM_SCEHDULES_QUERY)
-      .then((data) => setPrograms(data))
+      .then((data) => {
+        // Separate Open Fencing from other programs
+        const openFencingProgram = data.find(program => program.title === "OPEN FENCING");
+        const otherPrograms = data.filter(program => program.title !== "OPEN FENCING");
+        
+        // Reorder: other programs first, then Open Fencing last
+        const reorderedPrograms = [...otherPrograms, openFencingProgram].filter(Boolean);
+        
+        setPrograms(reorderedPrograms);
+      })
       .catch(console.error);
   }, []);
 
@@ -383,11 +392,11 @@ function ProgramsAndScheduleSection() {
               <div className="group-hover:opacity-0 group-hover:scale-95 transition-all duration-500 ease-out">
                 <div className="text-center mb-4">
                   <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-50 to-amber-100 rounded-full flex items-center justify-center text-xl mb-3 border border-amber-200/50 group-hover:scale-125 group-hover:rotate-12 group-hover:bg-gradient-to-br group-hover:from-amber-100 group-hover:to-amber-200 transition-all duration-500 ease-out">
-                      <img
-            src={urlFor(program.icon).width(40).height(40).url()}
-            alt={program.title}
-            className="w-10 h-10 group-hover:animate-pulse object-contain"
-          />
+                    <img
+                      src={urlFor(program.icon).width(40).height(40).url()}
+                      alt={program.title}
+                      className="w-10 h-10 group-hover:animate-pulse object-contain"
+                    />
                   </div>
                   <h4 className="text-amber-700 font-semibold text-base mb-3 tracking-wide group-hover:text-amber-800 transition-colors duration-300">
                     {program.title}
@@ -432,10 +441,11 @@ function ProgramsAndScheduleSection() {
             </div>
           ))}
         </div>
-        {/* Second row - 2 cards */}
+        
+        {/* Second row - remaining cards (including Open Fencing last) */}
         <div className="flex justify-center">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
-            {programs.slice(3, 5).map((program, index) => (
+            {programs.slice(3).map((program, index) => (
               <div
                 key={index + 3}
                 onClick={handleCardClick}
@@ -468,11 +478,11 @@ function ProgramsAndScheduleSection() {
                 <div className="group-hover:opacity-0 group-hover:scale-95 transition-all duration-500 ease-out">
                   <div className="text-center mb-4">
                     <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-50 to-amber-100 rounded-full flex items-center justify-center text-xl mb-3 border border-amber-200/50 group-hover:scale-125 group-hover:rotate-12 group-hover:bg-gradient-to-br group-hover:from-amber-100 group-hover:to-amber-200 transition-all duration-500 ease-out">
-                        <img
-            src={urlFor(program.icon).width(40).height(40).url()}
-            alt={program.title}
-            className="w-10 h-10 group-hover:animate-pulse object-contain"
-          />
+                      <img
+                        src={urlFor(program.icon).width(40).height(40).url()}
+                        alt={program.title}
+                        className="w-10 h-10 group-hover:animate-pulse object-contain"
+                      />
                     </div>
                     <h4 className="text-amber-700 font-semibold text-base mb-3 tracking-wide group-hover:text-amber-800 transition-colors duration-300">
                       {program.title}
@@ -518,6 +528,7 @@ function ProgramsAndScheduleSection() {
             ))}
           </div>
         </div>
+        
         {/* Team philosophy */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center mb-4">
@@ -536,6 +547,7 @@ function ProgramsAndScheduleSection() {
     </section>
   );
 }
+
 function TeamFencersSection() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -902,7 +914,6 @@ function TeamFencersSection() {
     </>
   );
 }
-
 function MinnowFencersSection() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -1348,6 +1359,827 @@ function MinnowFencersSection() {
     </>
   );
 }
+function CompetitiveFencersSection() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [sectionData, setSectionData] = useState(null);
+
+  // Fetch data from Sanity
+  useEffect(() => {
+    const fetchSectionData = async () => {
+      try {
+        // const query = PROGRAM_QUERIES.PROGRAM_OVERVIEW_COMPETITIVEFENCERS_QUERY;
+        
+        // const data = await sanityClient.fetch(query);
+         setSectionData(getDefaultData());
+        // setSectionData(data);
+      } catch (error) {
+        console.error('Error fetching section data:', error);
+        // Fallback to default data if Sanity fetch fails
+        setSectionData(getDefaultData());
+      }
+    };
+
+    fetchSectionData();
+  }, []);
+
+  // Fallback default data
+  const getDefaultData = () => ({
+    sectionTitle: "Competitive Fencing Program: Competitive Edge",
+    headerDescription: "Intensive training for dedicated competitive fencers who make more of a time commitment and usually have already narrowed their focus to a specific weapon while planning on competing in tournaments.",
+    slideShowImages: [
+      {
+        src: "/program/cmp1.jpg",
+        alt: "Competitive Fencers - Tournament Training",
+        caption: "Competitive fencers preparing for tournaments",
+      },
+      {
+        src: "/program/cmp3.jpg",
+        alt: "Advanced Fencing Training",
+        caption: "Focused weapon-specific training sessions",
+      },
+    ],
+    programHighlights: [
+      "Make more of a time commitment to competitive fencing",
+      "Usually have already narrowed focus to a specific weapon",
+      "Plan on competing in local and regional tournaments",
+      "Intensive training 4 days a week with weapon specialization",
+      "Advanced tactical and strategic instruction"
+    ],
+    practiceSchedule: [
+      { day: "Monday", time: "5:00 pm – 6:00 pm", weapon: "All Weapons" },
+      { day: "Tuesday", time: "5:00 pm – 6:00 pm", weapon: "All Weapons" },
+      { day: "Wednesday", time: "5:00 pm – 6:00 pm", weapon: "All Weapons" },
+      { day: "Thursday", time: "5:00 pm – 6:00 pm", weapon: "All Weapons" },
+    ],
+    pricing: [
+      { label: "Monthly Fee", price: "$160", note: "(recurring)" },
+    ],
+    terms: "Automatic monthly payments. Cancel anytime with written notice.",
+    equipmentInfo: "Complete personal fencing gear required",
+    equipmentRequirements: [
+      "Weapon-specific equipment for chosen discipline",
+      "Competition whites mandatory",
+      "Personal mask and glove recommended",
+    ],
+    ctaText: "Register for Competitive Program",
+    registrationUrl: "https://texasfencingacademy.glide.page",
+    registrationSectionTitle: "Join Competitive Program",
+    registrationSectionDescription: "Ready to take your fencing to the next level?",
+    registrationPromoText: "Advanced Training",
+    registrationPromoSubtext: "4 days per week intensive program"
+  });
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+  // Slideshow auto-advance effect
+  useEffect(() => {
+    if (!sectionData?.slideShowImages?.length) return;
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % sectionData.slideShowImages.length
+      );
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [sectionData?.slideShowImages?.length]);
+
+  // Process slideshow images for consistent format with WebP optimization
+  const processedSlideShowImages = sectionData?.slideShowImages?.map(image => ({
+    src: image.asset 
+      ? urlFor(image.asset).format('webp').quality(85).url()
+      : image.src,
+    alt: image.alt,
+    caption: image.caption
+  })) || [];
+
+  if (!sectionData) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <>
+      <section
+        id="competitive-fencers"
+        className="relative py-24 bg-gradient-to-b from-gray-100 via-gray-200 to-gray-300 overflow-hidden"
+      >
+        {/* Silver theme background patterns */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-gray-300 to-gray-400 opacity-20 rounded-full"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-tl from-gray-300 to-gray-400 opacity-15 rounded-full"></div>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-500 to-transparent"></div>
+            <div className="absolute bottom-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+          </div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6">
+          {/* Section header */}
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center space-x-4 mb-8 group">
+              <div className="w-16 h-px bg-amber-500 transition-colors duration-500 group-hover:bg-amber-600"></div>
+              <div className="w-12 h-12 border-2 border-amber-500 rounded-full flex items-center justify-center shadow-lg bg-gray-200/70 backdrop-blur-lg relative group-hover:border-amber-600 transition-all duration-500">
+                <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+              </div>
+              <div className="w-16 h-px bg-amber-500 transition-colors duration-500 group-hover:bg-amber-600"></div>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-light text-gray-800 mb-4 tracking-tight">
+              {sectionData.sectionTitle.includes(':') ? (
+                <>
+                  {sectionData.sectionTitle.split(':')[0]}:{" "}
+                  <span className="font-semibold text-amber-600">
+                    {sectionData.sectionTitle.split(':')[1]?.trim()}
+                  </span>
+                </>
+              ) : (
+                sectionData.sectionTitle
+              )}
+            </h1>
+          </div>
+
+          {/* Main content: Two-column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            {/* LEFT COLUMN - Image, Registration & Equipment Details */}
+            <div className="flex flex-col items-center justify-start">
+              <div
+                className={`bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl border border-gray-200 p-8 max-w-md w-full ${
+                  isLoaded
+                    ? "opacity-100 animate-[fadeInUp_0.8s_ease-out_forwards]"
+                    : "opacity-0"
+                }`}
+                style={{ animationDelay: "0.2s" }}
+              >
+                {/* Slideshow Image */}
+                {processedSlideShowImages.length > 0 && (
+                  <div className="relative overflow-hidden rounded-xl mb-8">
+                    <div className="relative w-full h-56">
+                      {processedSlideShowImages.map((image, index) => (
+                        <img
+                          key={index}
+                          src={image.src}
+                          alt={image.alt}
+                          className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-opacity duration-1000 ease-in-out ${
+                            index === currentImageIndex
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
+                      ))}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-xl"></div>
+                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <p className="text-sm font-medium drop-shadow-lg transition-opacity duration-1000">
+                        {processedSlideShowImages[currentImageIndex]?.caption}
+                      </p>
+                    </div>
+
+                    {/* Slideshow indicators */}
+                    <div className="absolute bottom-2 right-4 flex space-x-1">
+                      {processedSlideShowImages.map((_, index) => (
+                        <div
+                          key={index}
+                          className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                            index === currentImageIndex
+                              ? "bg-white"
+                              : "bg-white/50"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Registration Section */}
+                <div className="text-center space-y-6 mb-8">
+                  <div>
+                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">
+                      {sectionData.registrationSectionTitle}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4">
+                      {sectionData.registrationSectionDescription}
+                    </p>
+                    <div className="bg-amber-50 rounded-xl p-4 mb-6">
+                      <p className="text-amber-800 font-semibold text-lg">
+                        {sectionData.registrationPromoText}
+                      </p>
+                      <p className="text-amber-600 text-sm">
+                        {sectionData.registrationPromoSubtext}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Main CTA Button */}
+                  <button
+                    onClick={() =>
+                      window.open(sectionData.registrationUrl, "_blank")
+                    }
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-lg"
+                  >
+                    {sectionData.ctaText}
+                  </button>
+                </div>
+
+                {/* Equipment Information */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+                    Equipment Requirements
+                  </h4>
+                  <div className="mb-4">
+                    <p className="text-gray-600 text-sm mb-3">
+                      {sectionData.equipmentInfo}
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        Required Equipment
+                      </p>
+                      {sectionData.equipmentRequirements?.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
+                          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                          <span className="text-sm text-gray-700">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN - Core Information */}
+            <div
+              className={`${
+                isLoaded
+                  ? "opacity-100 animate-[fadeInUp_0.8s_ease-out_forwards]"
+                  : "opacity-0"
+              }`}
+              style={{ animationDelay: "0.4s" }}
+            >
+              {/* Program Introduction */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    About Competitive Program
+                  </h2>
+                </div>
+                <p className="text-base text-gray-700 leading-relaxed pl-16">
+                  {sectionData.headerDescription}
+                </p>
+              </div>
+
+              {/* Program Highlights */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Program Features
+                  </h2>
+                </div>
+                <div className="pl-16">
+                  <div className="space-y-2">
+                    {sectionData.programHighlights?.map((highlight, index) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <div className="w-1 h-1 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-sm text-gray-700">
+                          {highlight}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Practice Schedule */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Practice Schedule
+                  </h2>
+                </div>
+                <div className="pl-16">
+                  <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                    <div className="space-y-2">
+                      {sectionData.practiceSchedule?.map((schedule, index) => (
+                        <div
+                          key={index}
+                          className="flex justify-between items-center py-2 px-2 rounded-lg hover:bg-amber-100/70 hover:scale-[1.02] hover:shadow-sm transition-all duration-300 ease-out cursor-pointer relative after:absolute after:bottom-0 after:left-[20%] after:right-[20%] after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-amber-400/60 after:to-transparent"
+                        >
+                          <span className="text-sm font-medium text-gray-800 hover:text-amber-700 hover:scale-110 transition-all duration-300 ease-out transform-gpu">
+                            {schedule.day}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-600 hover:text-gray-700 transition-colors duration-300">
+                              {schedule.time}
+                            </span>
+                            <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded hover:bg-amber-300 hover:scale-105 transition-all duration-300">
+                              {schedule.weapon}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Pricing
+                  </h2>
+                </div>
+
+                <dl className="pl-16 space-y-6 opacity-0 animate-[fadeInUp_0.8s_ease-out_forwards]">
+                  {sectionData.pricing?.map((priceItem, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center group transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-amber-50/50 hover:shadow-sm rounded-lg p-3 -m-3 cursor-pointer relative after:absolute after:bottom-0 after:left-[20%] after:right-[20%] after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-amber-400/60 after:to-transparent"
+                    >
+                      <dt className="text-gray-700 text-sm font-medium group-hover:text-gray-900 transition-colors duration-300">
+                        {priceItem.label}
+                      </dt>
+                      <dd className="text-amber-600 text-base font-semibold group-hover:text-amber-700 transition-colors duration-300">
+                        {priceItem.price}
+                        {priceItem.note && (
+                          <span className="text-gray-500 text-xs group-hover:text-gray-600 transition-colors duration-300">
+                            {" "}{priceItem.note}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {sectionData.terms && (
+                  <div className="pl-16 mt-8 pt-6 border-t border-gray-200 opacity-0 animate-[fadeIn_0.8s_ease-out_0.5s_forwards]">
+                    <p className="text-gray-600 text-xs group hover:text-amber-700 transition-colors duration-300 cursor-default">
+                      <strong className="group-hover:text-gray-800 transition-colors duration-300">
+                        Terms:
+                      </strong>{" "}
+                      {sectionData.terms}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </>
+  );
+}
+
+function OpenFencingSection() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [sectionData, setSectionData] = useState(null);
+
+  // Fetch data from Sanity
+  useEffect(() => {
+    const fetchSectionData = async () => {
+      try {
+        // const query = PROGRAM_QUERIES.PROGRAM_OVERVIEW_OPENFENCING_QUERY;
+        
+        // const data = await sanityClient.fetch(query);
+         setSectionData(getDefaultData());
+        // setSectionData(data);
+      } catch (error) {
+        console.error('Error fetching section data:', error);
+        // Fallback to default data if Sanity fetch fails
+        setSectionData(getDefaultData());
+      }
+    };
+
+    fetchSectionData();
+  }, []);
+
+  // Fallback default data
+  const getDefaultData = () => ({
+    sectionTitle: "Open Fencing Program: Open Fencing",
+    headerDescription: "For adults and competitive TFA fencers to fence at our salle. Contact the coach or staff to determine which nights you'd like to attend.",
+    slideShowImages: [
+      {
+        src: "/program/cmp2.jpg",
+        alt: "Open Fencing - Adult Training",
+        caption: "Adults and competitive fencers training together",
+      },
+      {
+        src: "/program/cmp4.jpg",
+        alt: "Open Fencing Sessions",
+        caption: "Open fencing sessions for experienced fencers",
+      },
+    ],
+    programHighlights: [
+      "Designed for adults and competitive TFA fencers",
+      "Flexible scheduling - attend nights that work for you",
+      "Open training format with coaching supervision",
+      "Both epee and saber weapons available",
+      "Perfect for maintaining competitive edge"
+    ],
+    practiceSchedule: [
+      { 
+        days: "Monday, Tuesday, Wednesday, Thursday", 
+        time: "7:00 pm to 9:00 pm", 
+        weapon: "Both",
+        duration: "2 hours"
+      },
+      { 
+        days: "Saturday", 
+        time: "10:30 am to 12:30 pm", 
+        weapon: "Both",
+        duration: "2 hours"
+      },
+    ],
+    pricing: [
+      { label: "Drop-in Rate", price: "$25", note: "(per session)" },
+      { label: "Monthly Unlimited", price: "$120", note: "(recurring)" },
+    ],
+    terms: "Contact coach or staff to determine attendance schedule. Flexible payment options available.",
+    equipmentInfo: "Personal fencing equipment required",
+    equipmentRequirements: [
+      "Complete personal fencing gear",
+      "Weapon of choice (epee or saber)",
+      "Competition whites preferred",
+      "Personal mask and glove required",
+    ],
+    ctaText: "Contact for Open Fencing",
+    registrationUrl: "https://texasfencingacademy.glide.page",
+    registrationSectionTitle: "Join Open Fencing",
+    registrationSectionDescription: "Contact us to arrange your attendance",
+    registrationPromoText: "Flexible Schedule",
+    registrationPromoSubtext: "Choose nights that work for you"
+  });
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+  // Slideshow auto-advance effect
+  useEffect(() => {
+    if (!sectionData?.slideShowImages?.length) return;
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % sectionData.slideShowImages.length
+      );
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [sectionData?.slideShowImages?.length]);
+
+  // Process slideshow images for consistent format with WebP optimization
+  const processedSlideShowImages = sectionData?.slideShowImages?.map(image => ({
+    src: image.asset 
+      ? urlFor(image.asset).format('webp').quality(85).url()
+      : image.src,
+    alt: image.alt,
+    caption: image.caption
+  })) || [];
+
+  if (!sectionData) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <>
+      <section
+        id="open-fencing"
+        className="relative py-24 bg-gradient-to-b from-gray-100 via-gray-200 to-gray-300 overflow-hidden"
+      >
+        {/* Silver theme background patterns */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-gray-300 to-gray-400 opacity-20 rounded-full"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-tl from-gray-300 to-gray-400 opacity-15 rounded-full"></div>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-500 to-transparent"></div>
+            <div className="absolute bottom-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+          </div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6">
+          {/* Section header */}
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center space-x-4 mb-8 group">
+              <div className="w-16 h-px bg-amber-500 transition-colors duration-500 group-hover:bg-amber-600"></div>
+              <div className="w-12 h-12 border-2 border-amber-500 rounded-full flex items-center justify-center shadow-lg bg-gray-200/70 backdrop-blur-lg relative group-hover:border-amber-600 transition-all duration-500">
+                <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+              </div>
+              <div className="w-16 h-px bg-amber-500 transition-colors duration-500 group-hover:bg-amber-600"></div>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-light text-gray-800 mb-4 tracking-tight">
+              {sectionData.sectionTitle.includes(':') ? (
+                <>
+                  {sectionData.sectionTitle.split(':')[0]}:{" "}
+                  <span className="font-semibold text-amber-600">
+                    {sectionData.sectionTitle.split(':')[1]?.trim()}
+                  </span>
+                </>
+              ) : (
+                sectionData.sectionTitle
+              )}
+            </h1>
+          </div>
+
+          {/* Main content: Two-column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            {/* LEFT COLUMN - Core Information */}
+            <div
+              className={`${
+                isLoaded
+                  ? "opacity-100 animate-[fadeInUp_0.8s_ease-out_forwards]"
+                  : "opacity-0"
+              }`}
+            >
+              {/* Program Introduction */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    About Open Fencing
+                  </h2>
+                </div>
+                <p className="text-base text-gray-700 leading-relaxed pl-16">
+                  {sectionData.headerDescription}
+                </p>
+              </div>
+
+              {/* Program Highlights */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Program Features
+                  </h2>
+                </div>
+                <div className="pl-16">
+                  <div className="space-y-2">
+                    {sectionData.programHighlights?.map((highlight, index) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <div className="w-1 h-1 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-sm text-gray-700">
+                          {highlight}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Practice Schedule */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Schedule
+                  </h2>
+                </div>
+                <div className="pl-16">
+                  <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                    <div className="space-y-3">
+                      {sectionData.practiceSchedule?.map((schedule, index) => (
+                        <div
+                          key={index}
+                          className="bg-amber-50 rounded-lg p-3 border border-amber-100 hover:bg-amber-100/70 hover:scale-[1.02] hover:shadow-sm transition-all duration-300 ease-out cursor-pointer"
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-medium text-gray-800 text-sm">
+                              {schedule.days}
+                            </span>
+                            <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded hover:bg-amber-300 transition-colors duration-300">
+                              {schedule.weapon}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <p className="text-gray-600 text-sm font-medium">
+                              {schedule.time}
+                            </p>
+                            <p className="text-gray-500 text-xs">
+                              {schedule.duration}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-1 bg-amber-500 rounded mr-4"></div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Pricing Options
+                  </h2>
+                </div>
+
+                <dl className="pl-16 space-y-6 opacity-0 animate-[fadeInUp_0.8s_ease-out_forwards]">
+                  {sectionData.pricing?.map((priceItem, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center group transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-amber-50/50 hover:shadow-sm rounded-lg p-3 -m-3 cursor-pointer relative after:absolute after:bottom-0 after:left-[20%] after:right-[20%] after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-amber-400/60 after:to-transparent"
+                    >
+                      <dt className="text-gray-700 text-sm font-medium group-hover:text-gray-900 transition-colors duration-300">
+                        {priceItem.label}
+                      </dt>
+                      <dd className="text-amber-600 text-base font-semibold group-hover:text-amber-700 transition-colors duration-300">
+                        {priceItem.price}
+                        {priceItem.note && (
+                          <span className="text-gray-500 text-xs group-hover:text-gray-600 transition-colors duration-300">
+                            {" "}{priceItem.note}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {sectionData.terms && (
+                  <div className="pl-16 mt-8 pt-6 border-t border-gray-200 opacity-0 animate-[fadeIn_0.8s_ease-out_0.5s_forwards]">
+                    <p className="text-gray-600 text-xs group hover:text-amber-700 transition-colors duration-300 cursor-default">
+                      <strong className="group-hover:text-gray-800 transition-colors duration-300">
+                        Terms:
+                      </strong>{" "}
+                      {sectionData.terms}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN - Image, Registration & Equipment Details */}
+            <div className="flex flex-col items-center justify-start">
+              <div
+                className={`bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl border border-gray-200 p-8 max-w-md w-full ${
+                  isLoaded
+                    ? "opacity-100 animate-[fadeInUp_0.8s_ease-out_forwards]"
+                    : "opacity-0"
+                }`}
+                style={{ animationDelay: "0.4s" }}
+              >
+                {/* Slideshow Image */}
+                {processedSlideShowImages.length > 0 && (
+                  <div className="relative overflow-hidden rounded-xl mb-8">
+                    <div className="relative w-full h-56">
+                      {processedSlideShowImages.map((image, index) => (
+                        <img
+                          key={index}
+                          src={image.src}
+                          alt={image.alt}
+                          className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-opacity duration-1000 ease-in-out ${
+                            index === currentImageIndex
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
+                      ))}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-xl"></div>
+                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <p className="text-sm font-medium drop-shadow-lg transition-opacity duration-1000">
+                        {processedSlideShowImages[currentImageIndex]?.caption}
+                      </p>
+                    </div>
+
+                    {/* Slideshow indicators */}
+                    <div className="absolute bottom-2 right-4 flex space-x-1">
+                      {processedSlideShowImages.map((_, index) => (
+                        <div
+                          key={index}
+                          className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                            index === currentImageIndex
+                              ? "bg-white"
+                              : "bg-white/50"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Registration Section */}
+                <div className="text-center space-y-6 mb-8">
+                  <div>
+                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">
+                      {sectionData.registrationSectionTitle}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4">
+                      {sectionData.registrationSectionDescription}
+                    </p>
+                    <div className="bg-amber-50 rounded-xl p-4 mb-6">
+                      <p className="text-amber-800 font-semibold text-lg">
+                        {sectionData.registrationPromoText}
+                      </p>
+                      <p className="text-amber-600 text-sm">
+                        {sectionData.registrationPromoSubtext}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Main CTA Button */}
+                  <button
+                    onClick={() =>
+                      window.open(sectionData.registrationUrl, "_blank")
+                    }
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-lg"
+                  >
+                    {sectionData.ctaText}
+                  </button>
+                </div>
+
+                {/* Equipment Information */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+                    Equipment Requirements
+                  </h4>
+                  <div className="mb-4">
+                    <p className="text-gray-600 text-sm mb-3">
+                      {sectionData.equipmentInfo}
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        Required Equipment
+                      </p>
+                      {sectionData.equipmentRequirements?.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
+                          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                          <span className="text-sm text-gray-700">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </>
+  );
+}
 
 export default function ProgramOverviewPage() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -1388,8 +2220,10 @@ export default function ProgramOverviewPage() {
         <Navbar />
         <HeroSection />
         <ProgramsAndScheduleSection />
+        <CompetitiveFencersSection />
         <MinnowFencersSection />
         <TeamFencersSection />
+        <OpenFencingSection />
         <FooterSection />
       </div>
     </>

@@ -16,6 +16,10 @@ import { CartProvider } from './StorePageComponent/Cart/CartContex';
 import ContactPage from './HomeNavPages/ContactPage'; // Import the contact page
 import ParentsRoleSafetyPage from './ParentsPageComponets/SafetyAndParentsRole';
 import CompetitiveEdgePage from './ProgramNavPages/CompetitiveTraining';
+import NewFencersIntroPage from './ProgramNavPages/NewFencers';
+import AlumniCollegeFencingSection from './ParentsPageComponets/AlumniAndCollegeFencing';
+import AcademyAndAlumniPage from './ParentsPageComponets/AlumniAndCollegeFencing';
+import HomeschoolPELandingPage from './ProgramNavPages/HomeSchool';
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -51,6 +55,9 @@ function App() {
             <Route path="/contact" element={<ContactPage />} /> {/* Added contact page route */}
             <Route path="/safety" element={<ParentsRoleSafetyPage />} /> {/* Cart route for store */}
             <Route path='/competitiveEdge' element={<CompetitiveEdgePage/>}/>
+            <Route path="/introClasses" element={<NewFencersIntroPage />} /> {/* Fallback to Home for undefined routes */}
+            <Route path="/alumni" element={<AcademyAndAlumniPage />} />\
+            <Route path="/homeschool-pe" element={<HomeschoolPELandingPage />} />
           </Routes>
         </div>
       </Router>

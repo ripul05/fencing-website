@@ -12,6 +12,9 @@ const equipmentData = [
       "Complete epee starter kit with all essential equipment for beginners. Includes jacket, mask, glove, weapon, and protective gear.",
     image: "equipment/EpeeStarterKit.jpg",
     badge: "Complete Kit",
+    // Stripe
+    priceId: "price_123_epee_starter", // from your Stripe Dashboard
+    paymentLink: "https://buy.stripe.com/4gwcOF1Zp1ZLgkU5kR", 
   },
   {
     id: 102126285,
@@ -22,6 +25,8 @@ const equipmentData = [
       "Comprehensive saber starter kit with lamé and all necessary equipment for competitive saber fencing.",
     image: "equipment/SaberStarterKit.jpg",
     badge: "Complete Kit",
+    priceId: "price_123_saber_starter",
+    paymentLink: "https://buy.stripe.com/aEU8yp5bB7k57Oo00w",
   },
   {
     id: 102126286,
@@ -452,24 +457,36 @@ function StoreFilters({
   );
 }
 
-function EquipmentCard({ item, index, loaded, onAddToCart }) {
+function EquipmentCard({ item, index, loaded }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { addToCart, cartItems } = useCart();
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    addToCart(item);
+    addToCart({
+      ...item,
+      priceNumeric: Number(item.price.replace("$", "")),
+      quantity: 1,
+    });
   };
 
   const getItemQuantity = () => {
-    const cartItem = cartItems.find(cartItem => cartItem.id === item.id);
+    const cartItem = cartItems.find((ci) => ci.id === item.id);
     return cartItem ? cartItem.quantity : 0;
   };
 
   const handleQuickView = (e) => {
     e.stopPropagation();
-    // Handle quick view logic
+    // Quick view logic
   };
+
+  // Use link exactly as provided
+  const paymentLink = item.paymentLink || null;
+
+  // Optional: only append tracking if the item explicitly provides it
+  const href = paymentLink
+    ? `${paymentLink}${item.trackingQuery ? (paymentLink.includes("?") ? "&" : "?") + item.trackingQuery : ""}`
+    : null;
 
   return (
     <div
@@ -492,7 +509,7 @@ function EquipmentCard({ item, index, loaded, onAddToCart }) {
       {/* Minimal hover glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-amber-50/0 to-slate-50/0 group-hover:from-amber-50/20 group-hover:to-slate-50/10 transition-all duration-700 rounded-lg md:rounded-xl"></div>
 
-      {/* Image section - mobile responsive */}
+      {/* Image */}
       <div className="relative h-40 sm:h-48 md:h-52 overflow-hidden bg-slate-50">
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 animate-pulse"></div>
@@ -504,41 +521,21 @@ function EquipmentCard({ item, index, loaded, onAddToCart }) {
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
         />
 
-        {/* Minimal badge */}
+        {/* Badge */}
         {item.badge && (
           <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-amber-500 text-white text-xs font-medium px-2 py-1 rounded-md">
             {item.badge}
           </div>
         )}
 
-        {/* Category tag - more subtle */}
+        {/* Category tag */}
         <div className="absolute top-2 md:top-3 right-2 md:right-3 bg-white/80 backdrop-blur-sm text-slate-500 text-xs font-medium px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-300">
           {item.category}
         </div>
-
-        {/* Minimal action indicator */}
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:block">
-          <div className="w-5 h-5 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <svg
-              className="w-3 h-3 text-slate-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </div>
-        </div>
       </div>
 
-      {/* Clean content section - mobile responsive */}
+      {/* Content */}
       <div className="flex-1 flex flex-col p-3 md:p-5">
-        {/* Title and price header */}
         <div className="flex items-start justify-between mb-2 md:mb-3">
           <h3 className="text-sm md:text-base font-semibold text-slate-800 group-hover:text-amber-700 transition-colors duration-300 line-clamp-2 leading-snug flex-1 pr-2">
             {item.title}
@@ -550,82 +547,81 @@ function EquipmentCard({ item, index, loaded, onAddToCart }) {
           </div>
         </div>
 
-        {/* Description */}
         <p className="text-slate-600 text-xs md:text-sm leading-relaxed flex-grow mb-3 md:mb-4 line-clamp-3">
           {item.description}
         </p>
 
-        {/* Action section - mobile responsive */}
-        <div className="mt-auto pt-2 md:pt-3 border-t border-slate-100">
-          <div className="flex items-center justify-between">
-            {/* Add to cart button */}
-            <button
-              onClick={handleAddToCart}
-              className={`
-                group/btn relative overflow-hidden px-2.5 md:px-3 py-1.5 rounded-lg font-medium text-xs md:text-sm transition-all duration-300
-                ${
-                  getItemQuantity() > 0
-                    ? "bg-green-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-amber-500 hover:text-white"
-                }
-              `}
-            >
-              <span className="flex items-center space-x-1 md:space-x-1.5">
-                {getItemQuantity() > 0 ? (
-                  <>
-                    <svg
-                      className="w-3 h-3 md:w-3.5 md:h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    <span className="hidden sm:inline">Added ({getItemQuantity()})</span>
-                    <span className="sm:hidden">({getItemQuantity()})</span>
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-3 h-3 md:w-3.5 md:h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.293 2.293A1 1 0 004 16h0a1 1 0 001 1v0a1 1 0 001-1v0V7"
-                      />
-                    </svg>
-                    <span>Add</span>
-                  </>
-                )}
-              </span>
-            </button>
+        {/* Actions */}
+        {/* Actions */}
+{/* Actions */}
+<div className="mt-auto pt-2 md:pt-3 border-t border-slate-100">
+  <div className="flex items-center gap-2">
+    {/* Add to cart (left) */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleAddToCart(e);
+      }}
+      className={`
+        group/btn relative overflow-hidden px-2.5 md:px-3 py-1.5 rounded-lg font-medium text-xs md:text-sm transition-all duration-300
+        ${
+          getItemQuantity() > 0
+            ? "bg-green-500 text-white"
+            : "bg-slate-100 text-slate-700 hover:bg-amber-500 hover:text-white"
+        }
+      `}
+    >
+      <span className="flex items-center space-x-1 md:space-x-1.5">
+        {getItemQuantity() > 0 ? (
+          <>
+            <svg className="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="hidden sm:inline">Added ({getItemQuantity()})</span>
+            <span className="sm:hidden">({getItemQuantity()})</span>
+          </>
+        ) : (
+          <>
+            <svg className="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.293 2.293A1 1 0 004 16h0a1 1 0 001 1v0a1 1 0 001-1v0V7" />
+            </svg>
+            <span>Add</span>
+          </>
+        )}
+      </span>
+    </button>
 
-            {/* Quick view button */}
-            <button
-              onClick={handleQuickView}
-              className="px-2.5 md:px-3 py-1.5 text-xs md:text-sm text-slate-600 hover:text-amber-600 transition-colors duration-300"
-            >
-              View
-            </button>
-          </div>
-        </div>
+    {/* Spacer pushes Buy now to the far right */}
+    <div className="flex-1" />
+
+    {/* Buy now (right) */}
+    {href && (
+      <a
+        href={href}
+        rel="noopener noreferrer"
+        // Important: don't prevent default, only stop propagation
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        className="px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-all duration-300 hover:scale-[1.02] z-10 pointer-events-auto"
+      >
+        Buy now
+      </a>
+    )}
+  </div>
+</div>
+
+
       </div>
 
-      {/* Subtle bottom accent */}
+      {/* Bottom accent */}
       <div className="h-0.5 bg-gradient-to-r from-amber-400/50 to-amber-500/50 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
   );
 }
+
+
+
 
 export default function EquipmentStore() {
   const [loaded, setLoaded] = useState(false);

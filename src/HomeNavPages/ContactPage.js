@@ -1,3 +1,4 @@
+import InfoBanner from "../HomePageComponent/InfoBanner";
 import Navbar from "../HomePageComponent/Navbar";
 import FooterSection from "../Sections/FooterSection";
 // ContactInfo Component - Elegant & Modern with Hover Animations
@@ -368,6 +369,7 @@ const ContactPage = () => {
   // Function to handle email click
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-gray-100 via-gray-200 to-gray-300 overflow-hidden">
+      <InfoBanner/>
       <Navbar/>
       {/* Background patterns */}
       <div className="absolute inset-0 pointer-events-none">
@@ -429,7 +431,7 @@ const ContactPage = () => {
 
               <div className="space-y-4 text-gray-700 leading-relaxed flex-grow">
                 <p>
-                  Founded in <strong className="text-amber-600 italic">1989</strong> by Coach Ray, Texas Fencing
+                  Founded in <strong className="text-amber-600 italic">1989</strong> by Coach Ray, along with founding board members John Baird and Vincent (Vinnie) Bradford, Texas Fencing
                   Academy has proudly served the Austin community for over{" "}
                   <strong className="text-amber-600 italic">36 years</strong>. We are a specialized two-weapon
                   academy focusing on <strong className="text-amber-600 italic">épée and saber</strong>, offering
@@ -437,8 +439,8 @@ const ContactPage = () => {
                 </p>
 
                 <p>
-                  Our <strong className="text-amber-600 italic">6,000-square-foot</strong> state-of-the-art
-                  facility features <strong className="text-amber-600 italic">7 electrical fencing strips</strong>
+                  Our <strong className="text-amber-600 italic">9,000-square-foot</strong> state-of-the-art
+                  facility features <strong className="text-amber-600 italic">15 grounded electric strips</strong>
                   , providing ample space for both training and competition. We
                   have successfully trained fencers who have gone on to compete
                   at NCAA programs in institutions like Stanford, Columbia, UNC,
@@ -541,6 +543,7 @@ const ContactPage = () => {
     </div>
   );
 };
+
 
 
 export default ContactPage;

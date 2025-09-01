@@ -62,10 +62,12 @@ const Navbar = () => {
       icon: "/navbarIcons/program.png",
       dropdown: [
         { text: "All Programs", href: "/program" },
+        { text: "Intro Classes", href: "/introClasses" },
         { text: "Youth Programs", href: "/youthFencing" },
         { text: "Adult Fencing", href: "/adultFencing" },
         { text: "Private Lessons", href: "/privateLessons" },
         { text: "Competitive Edge", href: "/competitiveEdge" },
+        { text: "Homeschool PE", href: "/homeschool-pe" },
       ],
     },
     {
@@ -74,7 +76,7 @@ const Navbar = () => {
       icon: "/navbarIcons/family.png",
       dropdown: [
         { text: "Safety & Parents Role", href: "/safety" },
-        { text: "College Advantage", href: "/safety" },
+        { text: "College Advantage", href: "/alumni" },
       ],
     },
     {

@@ -495,25 +495,22 @@ function YouthFencingInfoSection() {
 function YouthProgramsSection() {
   const [loaded, setLoaded] = useState(false);
   const [sectionData, setSectionData] = useState(null);
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      setLoaded(true)
+      setLoaded(true);
     }, 200);
-    return () => clearTimeout(timer)
+    return () => clearTimeout(timer);
   }, []);
 
-  // Fetch data from Sanity
   useEffect(() => {
     const fetchSectionData = async () => {
       try {
-        const query = PROGRAM_QUERIES.PROGRAM_YOUTH_FENCING_PROGRAM_SECTION ;
-        
+        const query = PROGRAM_QUERIES.PROGRAM_YOUTH_FENCING_PROGRAM_SECTION;
         const data = await sanityClient.fetch(query);
         setSectionData(data);
       } catch (error) {
-        console.error('Error fetching section data:', error);
-        // Fallback to default data if Sanity fetch fails
+        console.error("Error fetching section data:", error);
         setSectionData(getDefaultData());
       }
     };
@@ -521,13 +518,13 @@ function YouthProgramsSection() {
     fetchSectionData();
   }, []);
 
-  // Fallback default data
   const getDefaultData = () => ({
     sectionTitle: "Youth Program Options",
-    sectionSubtitle: "Comprehensive youth fencing programs designed for every skill level and age group",
+    sectionSubtitle:
+      "Comprehensive youth fencing programs designed for every skill level and age group",
     infoPanel: {
       main: "Ready to begin? Register through our portal and attend a complimentary orientation class to get started.",
-      sub: "Hover over each program to see detailed schedules and pricing information."
+      sub: "Hover over each program to see detailed schedules and pricing information.",
     },
     chooseTitle: "Choose Your Youth Path",
     chooseSubtitle: "Hover over a program you're interested in to see the schedule",
@@ -535,7 +532,8 @@ function YouthProgramsSection() {
     programs: [
       {
         title: "Monthly Subscription",
-        description: "Perfect for youth fencers who want consistent training with flexible scheduling. Includes access to age-appropriate classes and equipment.",
+        description:
+          "Perfect for youth fencers who want consistent training with flexible scheduling. Includes access to age-appropriate classes and equipment.",
         price: "$95.00",
         image: { src: "/youthFencing/MonthlySubscription.jpg", alt: "Monthly Subscription Program" },
         href: "https://texasfencingacademy.org/?page_id=881",
@@ -543,12 +541,13 @@ function YouthProgramsSection() {
         schedule: [
           { day: "Monday, Wednesday", time: "4:00 pm to 5:00 pm", weapon: "Epee" },
           { day: "Tuesday, Thursday", time: "4:00 pm to 5:00 pm", weapon: "Saber" },
-          { day: "Saturday", time: "9:00 am to 10:00 am", weapon: "Both" }
-        ]
+          { day: "Saturday", time: "9:00 am to 10:00 am", weapon: "Both" },
+        ],
       },
       {
         title: "Full Subscription (Monthly Recurring)",
-        description: "Comprehensive program for serious youth fencers. Includes all classes, private lessons, and competition preparation.",
+        description:
+          "Comprehensive program for serious youth fencers. Includes all classes, private lessons, and competition preparation.",
         price: "$195.00",
         image: { src: "/youthFencing/YearlySubscription.jpg", alt: "Full Subscription Program" },
         href: "https://texasfencingacademy.org/?page_id=881",
@@ -556,12 +555,13 @@ function YouthProgramsSection() {
         schedule: [
           { day: "Monday - Thursday", time: "4:00 pm to 6:00 pm", weapon: "All" },
           { day: "Saturday", time: "9:00 am to 12:00 pm", weapon: "Both" },
-          { day: "Private Lessons", time: "By Appointment", weapon: "Specialized" }
-        ]
+          { day: "Private Lessons", time: "By Appointment", weapon: "Specialized" },
+        ],
       },
       {
         title: "Competition Team",
-        description: "Elite training program for youth competitors. Team membership, tournament preparation, and advanced coaching included.",
+        description:
+          "Elite training program for youth competitors. Team membership, tournament preparation, and advanced coaching included.",
         price: "$0.00",
         image: { src: "/youthFencing/YouthTeam.jpg", alt: "Competition Team Program" },
         href: "https://texasfencingacademy.org/?page_id=881",
@@ -569,39 +569,39 @@ function YouthProgramsSection() {
         schedule: [
           { day: "Monday - Friday", time: "5:00 pm to 7:00 pm", weapon: "All" },
           { day: "Saturday", time: "8:00 am to 12:00 pm", weapon: "Competition" },
-          { day: "Tournament Days", time: "As Scheduled", weapon: "Specialized" }
-        ]
-      }
+          { day: "Tournament Days", time: "As Scheduled", weapon: "Specialized" },
+        ],
+      },
     ],
     bottomCtaPanel: {
-      leadText: "Ready to start your journey? Join our youth fencing community and discover the perfect balance of competition, character building, and lifelong friendships.",
+      leadText:
+        "Ready to start your journey? Join our youth fencing community and discover the perfect balance of competition, character building, and lifelong friendships.",
       registerText: "Register Now",
-      registerHref: "https://texasfencingacademy.glide.page"
-    }
+      registerHref: "https://texasfencingacademy.glide.page",
+    },
   });
 
-  // Process program images for WebP format
-  const processedPrograms = sectionData?.programs?.map((program, index) => ({
-    ...program,
-    id: index + 1, // Add ID for key prop
-    image: program.image?.asset 
-      ? urlFor(program.image.asset).format('webp').quality(85).url()
-      : program.image?.src || `/youthFencing/program${index + 1}.jpg`,
-    alt: program.image?.alt || program.title
-  })) || [];
+  const processedPrograms =
+    sectionData?.programs?.map((program, index) => ({
+      ...program,
+      id: index + 1,
+      image: program.image?.asset
+        ? urlFor(program.image.asset).format("webp").quality(85).url()
+        : program.image?.src || `/youthFencing/program${index + 1}.jpg`,
+      alt: program.image?.alt || program.title,
+    })) || [];
 
-  // Function to handle card click
   const handleCardClick = (href) => {
     window.open(href, "_blank");
   };
 
-  // Render title with highlight
   const renderTitle = (title) => {
-    if (title.includes('Options')) {
-      const parts = title.split('Options');
+    if (title.includes("Options")) {
+      const parts = title.split("Options");
       return (
         <>
-          {parts[0]}<span className="font-semibold text-amber-600">Options</span>
+          {parts}
+          <span className="font-semibold text-amber-600">Options</span>
         </>
       );
     }
@@ -609,11 +609,12 @@ function YouthProgramsSection() {
   };
 
   const renderChooseTitle = (title) => {
-    if (title.includes('Youth Path')) {
-      const parts = title.split('Youth Path');
+    if (title.includes("Youth Path")) {
+      const parts = title.split("Youth Path");
       return (
         <>
-          {parts[0]}<span className="font-semibold text-amber-600">Youth Path</span>
+          {parts}
+          <span className="font-semibold text-amber-600">Youth Path</span>
         </>
       );
     }
@@ -621,11 +622,14 @@ function YouthProgramsSection() {
   };
 
   if (!sectionData) {
-    return <div>Loading...</div>; // Loading state
+    return <div>Loading...</div>;
   }
 
   return (
-    <section id="youth-programs" className="relative py-24 bg-gradient-to-b from-gray-200 via-gray-100 to-gray-50 overflow-hidden">
+    <section
+      id="youth-programs"
+      className="relative py-24 bg-gradient-to-b from-gray-200 via-gray-100 to-gray-50 overflow-hidden"
+    >
       {/* Background elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-amber-100 to-amber-200 opacity-30 rounded-full"></div>
@@ -653,14 +657,13 @@ function YouthProgramsSection() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed mb-4">
             {sectionData.sectionSubtitle}
           </p>
-          
+
           <div className="max-w-3xl mx-auto bg-gradient-to-r from-amber-50 to-amber-50 border border-amber-200/50 rounded-lg p-4 mb-8">
             <p className="text-gray-700 text-base mb-2">
-              <strong>Ready to begin?</strong> {sectionData.infoPanel.main.replace('Ready to begin? ', '')}
+              <strong>Ready to begin?</strong>{" "}
+              {sectionData.infoPanel.main.replace("Ready to begin? ", "")}
             </p>
-            <p className="text-gray-600 text-sm">
-              {sectionData.infoPanel.sub}
-            </p>
+            <p className="text-gray-600 text-sm">{sectionData.infoPanel.sub}</p>
           </div>
         </div>
 
@@ -676,20 +679,24 @@ function YouthProgramsSection() {
             {sectionData.chooseInstructions}
           </p>
 
-          {/* Programs grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Programs wrapper: flex to center last row */}
+          <div className="flex flex-wrap justify-center gap-8">
             {processedPrograms.map((program, index) => (
               <div
                 key={program.id}
                 onClick={() => handleCardClick(program.href)}
-                className={`group relative bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-2xl hover:-translate-y-3 hover:scale-105 transition-all duration-1000 ease-out min-h-[400px] cursor-pointer overflow-hidden ${
-                  loaded 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-8'
-                }`}
-                style={{ 
-                  transitionDelay: loaded ? `${index * 150}ms` : '0ms',
-                  animation: loaded ? `fadeInUp 1.5s ease-out forwards ${index * 150}ms` : 'none'
+                // Width logic:
+                // - w-full on small screens (1 per row)
+                // - md: ~1/3 width to mimic 3 columns; using max-w to keep equal columns
+                className={`w-full md:max-w-[calc(33.333%-21.333px)] md:basis-[calc(33.333%-21.333px)]
+                  group relative bg-white rounded-xl shadow-sm border border-gray-100 p-6
+                  hover:shadow-2xl hover:-translate-y-3 hover:scale-105 transition-all duration-1000 ease-out
+                  min-h-[400px] cursor-pointer overflow-hidden ${
+                    loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                  }`}
+                style={{
+                  transitionDelay: loaded ? `${index * 150}ms` : "0ms",
+                  animation: loaded ? `fadeInUp 1.5s ease-out forwards ${index * 150}ms` : "none",
                 }}
               >
                 {/* Subtle top accent with animation */}
@@ -705,7 +712,7 @@ function YouthProgramsSection() {
                   </div>
                 )}
 
-                {/* Click indicator with bounce animation */}
+                {/* Click indicator */}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-1000 group-hover:animate-bounce">
                   <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center group-hover:bg-amber-200 transition-colors duration-500">
                     <svg
@@ -724,13 +731,12 @@ function YouthProgramsSection() {
                   </div>
                 </div>
 
-                {/* Program info with fade and scale animations */}
+                {/* Program info */}
                 <div className="group-hover:opacity-0 group-hover:scale-95 transition-all duration-1000 ease-out">
-                  {/* Image section */}
                   <div className="relative h-48 overflow-hidden rounded-lg mb-4">
-                    <img 
-                      src={program.image} 
-                      alt={program.alt} 
+                    <img
+                      src={program.image}
+                      alt={program.alt}
                       className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-1200"
                       loading="lazy"
                     />
@@ -745,12 +751,9 @@ function YouthProgramsSection() {
                   <p className="text-gray-600 text-sm leading-relaxed text-center group-hover:text-gray-700 transition-colors duration-500 mb-4">
                     {program.description}
                   </p>
-                  
-                  {/* Price display */}
+
                   <div className="text-center">
-                    <span className="text-2xl font-bold text-amber-600">
-                      {program.price}
-                    </span>
+                    <span className="text-2xl font-bold text-amber-600">{program.price}</span>
                     {program.price !== "$0.00" && (
                       <span className="text-sm text-gray-500 block">per month</span>
                     )}
@@ -762,12 +765,9 @@ function YouthProgramsSection() {
                   <h5 className="text-amber-700 font-semibold text-center mb-2 text-base group-hover:animate-pulse">
                     SCHEDULE & PRICING
                   </h5>
-                  
-                  {/* Price display in overlay */}
+
                   <div className="text-center mb-4">
-                    <span className="text-2xl font-bold text-amber-600">
-                      {program.price}
-                    </span>
+                    <span className="text-2xl font-bold text-amber-600">{program.price}</span>
                     {program.price !== "$0.00" && (
                       <span className="text-sm text-gray-500 block">monthly recurring</span>
                     )}
@@ -781,16 +781,12 @@ function YouthProgramsSection() {
                         style={{ transitionDelay: `${scheduleIndex * 150}ms` }}
                       >
                         <div className="flex justify-between items-center mb-1">
-                          <span className="font-medium text-gray-800 text-xs">
-                            {schedule.day}
-                          </span>
+                          <span className="font-medium text-gray-800 text-xs">{schedule.day}</span>
                           <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded group-hover:bg-amber-300 transition-colors duration-500">
                             {schedule.weapon}
                           </span>
                         </div>
-                        <p className="text-gray-600 text-xs font-medium">
-                          {schedule.time}
-                        </p>
+                        <p className="text-gray-600 text-xs font-medium">{schedule.time}</p>
                       </div>
                     ))}
                   </div>
@@ -815,7 +811,7 @@ function YouthProgramsSection() {
           <div className="max-w-2xl mx-auto bg-gradient-to-r from-amber-50 to-amber-50 border border-amber-200/50 rounded-lg p-6">
             <p className="text-gray-700 font-medium text-base mb-4">
               <span className="text-amber-700 font-semibold">Ready to start your journey?</span>{" "}
-              {sectionData.bottomCtaPanel.leadText.replace('Ready to start your journey? ', '')}
+              {sectionData.bottomCtaPanel.leadText.replace("Ready to start your journey? ", "")}
             </p>
             <a
               href={sectionData.bottomCtaPanel.registerHref}
@@ -834,6 +830,7 @@ function YouthProgramsSection() {
     </section>
   );
 }
+
 
 export default function YouthFencingPage() {
   return (
