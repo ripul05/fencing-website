@@ -17,7 +17,6 @@ import ContactPage from './HomeNavPages/ContactPage'; // Import the contact page
 import ParentsRoleSafetyPage from './ParentsPageComponets/SafetyAndParentsRole';
 import CompetitiveEdgePage from './ProgramNavPages/CompetitiveTraining';
 import NewFencersIntroPage from './ProgramNavPages/NewFencers';
-import AlumniCollegeFencingSection from './ParentsPageComponets/AlumniAndCollegeFencing';
 import AcademyAndAlumniPage from './ParentsPageComponets/AlumniAndCollegeFencing';
 import HomeschoolPELandingPage from './ProgramNavPages/HomeSchool';
 

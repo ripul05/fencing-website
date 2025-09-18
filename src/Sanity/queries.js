@@ -162,7 +162,49 @@ module.exports = {
       primaryCta { text, url, newTab },
       secondaryCta { text, action }
     }`,
-    PROGRAM_SCEHDULES_QUERY: `*[_type == "program"] | order(title asc) {title, description, icon, schedule}`,
+    PROGRAM_SCEHDULES_QUERY: `*[_type == "programsectionAllPrograms"] | order(_createdAt asc) {
+    title,
+    description,
+    icon {
+      asset->{
+        _id,
+        url
+      },
+      alt
+    },
+    schedule[] {
+      day,
+      time,
+      weapon
+    },
+    sectionTitle,
+    headerDescription,
+    slideShowImages[] {
+      image {
+        asset->{
+          _id,
+          url
+        }
+      },
+      alt,
+      caption
+    },
+    programHighlights,
+    pricing[] {
+      label,
+      price,
+      note
+    },
+    terms,
+    equipmentInfo,
+    equipmentRequirements,
+    ctaText,
+    registrationUrl,
+    registrationSectionTitle,
+    registrationSectionDescription,
+    registrationPromoText,
+    registrationPromoSubtext
+  }`,
     PROGRAM_OVERVIEW_MINNOWFENCERS_QUERY: `*[_type == "minnowFencersSection"][0]{
           sectionTitle,
           headerDescription,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import React from 'react';
 import { Link } from 'react-router-dom';
 import founderpageimg2 from "../../assets/founderpageimg2.jpg";
@@ -7,74 +7,163 @@ import Navbar from "../../HomePageComponent/Navbar";
 import InfoBanner from "../../HomePageComponent/InfoBanner";
 import FooterSection from "../../Sections/FooterSection";
 
-function HeroFounderSection() {
-    return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
-            {/* Background Video */}
-            <div className="absolute inset-0">
-                <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                >
-                    <source src={founderpagebg} type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
 
-                {/* Video Overlay for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-900/60 via-gray-800/50 to-gray-900/60"></div>
+function HeroFounderSection({ posterSrc, videoSrc }) {
+  const videoRef = useRef(null);
+  const [enableVideo, setEnableVideo] = useState(false);
+
+  // Stable viewport height fallback for iOS toolbar changes
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    setVh();
+    window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    return () => {
+      window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
+    };
+  }, []);
+
+  // Enable background video only on md+ screens (>=768px)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setEnableVideo(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+
+  // Pause when page is hidden (reduce CPU/memory)
+  useEffect(() => {
+    const onVis = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      if (document.visibilityState !== "visible") v.pause();
+      else if (enableVideo) v.play().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [enableVideo]);
+
+  // Unload video when disabled (mobile) to free Safari decoder/buffers
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (!enableVideo) {
+      v.removeAttribute("src");
+      while (v.firstChild) v.removeChild(v.firstChild);
+      v.load();
+    } else {
+      // Ensure muted and try to play for desktop reliability
+      v.muted = true;
+      v.play?.().catch(() => {});
+    }
+  }, [enableVideo]);
+
+  return (
+    <section
+      className="
+        relative
+        min-h-[100dvh]
+        sm:min-h-[calc(var(--vh,1vh)*100)]
+        flex items-center justify-center overflow-hidden
+        px-4 sm:px-6
+      "
+      style={{ overscrollBehavior: "none" }}
+    >
+      {/* Background */}
+      <div className="absolute inset-0">
+        {!enableVideo ? (
+          <img
+            src={posterSrc}
+            alt="Founders of Texas Fencing Academy"
+            className="w-full h-full object-cover object-center"
+            fetchPriority="high"
+            decoding="async"
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+            className="w-full h-full object-cover"
+            poster={posterSrc}
+          >
+            <source src={`${videoSrc}#t=0.001`} type="video/mp4" />
+          </video>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 pointer-events-none" />
+      </div>
+
+      {/* Decorative lines (lighter on mobile) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-24 sm:top-40 left-[18%] sm:left-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-24 sm:bottom-40 right-[18%] sm:right-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
+        <div className="absolute top-1/2 left-1/2 w-px h-24 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
+      </div>
+
+      {/* Content: mobile-optimized typography and spacing; scales on desktop */}
+      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="overflow-hidden">
+            <h1
+              className="
+                font-extralight tracking-tight text-white drop-shadow-lg
+                leading-tight sm:leading-none
+                text-[clamp(1.75rem,5.2vw,3rem)] sm:text-5xl lg:text-6xl
+              "
+            >
+              <span className="block">FROM OUR</span>
+              <span className="block text-amber-400 font-normal drop-shadow-lg">
+                FOUNDERS
+              </span>
+            </h1>
+          </div>
+
+          {/* Center divider motif */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
+            <div className="w-9 sm:w-12 h-9 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
+              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full" />
             </div>
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
+          </div>
+        </div>
 
-            {/* Refined fencing motifs */}
-            <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-fade-in delay-[3000ms]"></div>
-                <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-fade-in delay-[3500ms]"></div>
-                <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent transform rotate-45 animate-fade-in delay-[4000ms]"></div>
-            </div>
+        <div className="overflow-hidden">
+          <h2
+            className="
+              font-light text-white drop-shadow-md
+              tracking-[0.06em] sm:tracking-[0.15em]
+              text-[clamp(1.05rem,2.8vw,1.75rem)] sm:text-2xl lg:text-3xl
+            "
+          >
+            VINCENT BRADFORD & RAY PARKER
+          </h2>
+        </div>
 
-            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
-                {/* Main heading */}
-                <div className="space-y-6">
-                    <div className="overflow-hidden">
-                        <h1 className="text-6xl lg:text-7xl font-extralight tracking-tight leading-none animate-slide-up delay-[800ms] text-white drop-shadow-lg">
-                            <span className="block animate-slide-up delay-[1000ms]">
-                                FROM OUR
-                            </span>
-                            <span className="block text-amber-400 font-normal animate-slide-up delay-[1400ms] drop-shadow-lg">
-                                FOUNDERS
-                            </span>
-                        </h1>
-                    </div>
-
-                    {/* Elegant centered divider */}
-                    <div className="flex items-center justify-center space-x-4 animate-fade-in delay-[2200ms]">
-                        <div className="w-16 h-px bg-gradient-to-r from-transparent to-amber-400 animate-slide-right delay-[2800ms]"></div>
-                        <div className="w-12 h-12 border-2 border-white/70 rotate-45 flex items-center justify-center animate-fade-in delay-[2400ms] hover:scale-110 hover:border-amber-400 transition-all duration-500 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
-                            <div className="w-3 h-3 bg-amber-400 rounded-full animate-pulse delay-[2600ms]"></div>
-                        </div>
-                        <div className="w-16 h-px bg-gradient-to-l from-transparent to-amber-400 animate-slide-left delay-[2800ms]"></div>
-                    </div>
-                </div>
-
-                {/* Excellence tagline */}
-                <div className="overflow-hidden">
-                    <h2 className="text-2xl lg:text-3xl font-light text-white tracking-[0.15em] animate-slide-up delay-[3000ms] drop-shadow-md">
-                        VINCENT BRADFORD & RAY PARKER
-                    </h2>
-                </div>
-
-                {/* Description */}
-                <div className="overflow-hidden">
-                    <p className="text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto animate-fade-in delay-[3400ms] drop-shadow-sm">
-                        Meet the visionaries behind Texas Fencing Academy and discover their passion
-                        for developing the next generation of fencers through excellence and dedication.
-                    </p>
-                </div>
-            </div>
-        </section>
-    );
+        <div className="overflow-hidden">
+          <p
+            className="
+              text-white font-light drop-shadow-sm mx-auto leading-relaxed
+              text-[clamp(0.98rem,2.6vw,1.125rem)] sm:text-lg lg:text-xl
+              max-w-[60ch] sm:max-w-[65ch]
+            "
+          >
+            Meet the visionaries behind Texas Fencing Academy and discover their passion
+            for developing the next generation of fencers through excellence and dedication.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function FoundersProfileSection() {
@@ -764,7 +853,10 @@ export default function FounderPage() {
             } ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
             <InfoBanner />
             <Navbar />
-            <HeroFounderSection />
+            <HeroFounderSection
+  posterSrc={founderpageimg2}          // path or import for poster image
+  videoSrc={founderpagebg}            // mp4 H.264 background loop
+/>
             <FoundersProfileSection />
             <FounderVideoSection />
             <CoachesSection />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { sanityClient } from '../Sanity/sanityClient';
 import { urlFor } from '../Sanity/imageBuilder';
 import { LANDING_PAGE_GALLERY_SECTION_QUERY } from '../Sanity/queries';
@@ -6,6 +6,9 @@ import { LANDING_PAGE_GALLERY_SECTION_QUERY } from '../Sanity/queries';
 export default function GallerySection() {
   const [data, setData] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const carouselRef = useRef(null);
 
   useEffect(() => {
     sanityClient.fetch(LANDING_PAGE_GALLERY_SECTION_QUERY)
@@ -21,6 +24,40 @@ export default function GallerySection() {
     jpg: urlFor(img.src.asset).format('jpg').url(),
     alt: img.alt
   }));
+
+  // Navigation functions
+  const goToPrevious = () => {
+    setCurrentImageIndex(currentImageIndex === 0 ? galleryImages.length - 1 : currentImageIndex - 1);
+  };
+
+  const goToNext = () => {
+    setCurrentImageIndex(currentImageIndex === galleryImages.length - 1 ? 0 : currentImageIndex + 1);
+  };
+
+  // Touch handlers for swipe functionality[23][33]
+  const handleTouchStart = (e) => {
+    setTouchEnd(null); // prevent swipe if touch hasn't ended
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    // Swipe threshold of 50px to prevent accidental swipes[33]
+    if (isLeftSwipe) {
+      goToNext();
+    } else if (isRightSwipe) {
+      goToPrevious();
+    }
+  };
 
   return (
     <section className="py-12 sm:py-24 bg-gradient-to-b from-slate-50 relative overflow-hidden">
@@ -58,17 +95,25 @@ export default function GallerySection() {
           </p>
         </div>
 
-        {/* Carousel */}
+        {/* Carousel with Swipe Support */}
         <div className="relative max-w-6xl mx-auto mb-12 sm:mb-20">
           <div className="relative group">
             <div className="absolute -inset-2 sm:-inset-4 bg-gradient-to-br from-amber-100/50 via-transparent to-slate-100/50 rounded-2xl sm:rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-            <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] rounded-xl sm:rounded-2xl overflow-hidden shadow-elegant bg-gradient-to-br from-slate-100 to-amber-50">
+            <div 
+              ref={carouselRef}
+              className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] rounded-xl sm:rounded-2xl overflow-hidden shadow-elegant bg-gradient-to-br from-slate-100 to-amber-50 cursor-grab active:cursor-grabbing select-none"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ touchAction: 'pan-x' }} // Allow horizontal panning only[28]
+            >
               <picture>
                 <source srcSet={galleryImages[currentImageIndex].webp} type="image/webp" />
                 <img
                   src={galleryImages[currentImageIndex].jpg}
                   alt={galleryImages[currentImageIndex].alt}
-                  className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 select-none"
+                  draggable={false} // Prevent default drag behavior[33]
                 />
               </picture>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500">
@@ -84,23 +129,26 @@ export default function GallerySection() {
                   </div>
                 </div>
               </div>
+              
               {/* Navigation arrows */}
               <button
-                onClick={() => setCurrentImageIndex(currentImageIndex === 0 ? galleryImages.length - 1 : currentImageIndex - 1)}
-                className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 opacity-70 sm:opacity-0 group-hover:opacity-100 hover:scale-110"
+                onClick={goToPrevious}
+                className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 opacity-70 sm:opacity-0 group-hover:opacity-100 hover:scale-110 z-10"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <button
-                onClick={() => setCurrentImageIndex(currentImageIndex === galleryImages.length - 1 ? 0 : currentImageIndex + 1)}
-                className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 opacity-70 sm:opacity-0 group-hover:opacity-100 hover:scale-110"
+                onClick={goToNext}
+                className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 opacity-70 sm:opacity-0 group-hover:opacity-100 hover:scale-110 z-10"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
+
+              {/* Swipe Indicator for Mobile */}
             </div>
           </div>
 
@@ -146,7 +194,8 @@ export default function GallerySection() {
                     <img
                       src={image.jpg}
                       alt={image.alt}
-                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
+                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 select-none"
+                      draggable={false}
                     />
                   </picture>
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500">

@@ -245,6 +245,21 @@ const sortOptions = [
 function StoreHeroSection() {
   const [isResizing, setIsResizing] = useState(false);
 
+  // --vh fallback for mobile viewport (same as your working solution)
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    setVh();
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    window.addEventListener("resize", setVh, { passive: true });
+    return () => {
+      window.removeEventListener("orientationchange", setVh);
+      window.removeEventListener("resize", setVh);
+    };
+  }, []);
+
   // Handle resize events for performance
   useEffect(() => {
     let resizeTimer;
@@ -256,7 +271,7 @@ function StoreHeroSection() {
       }, 300);
     }
     
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
     return () => {
       window.removeEventListener("resize", handleResize);
       clearTimeout(resizeTimer);
@@ -265,66 +280,87 @@ function StoreHeroSection() {
 
   return (
     <section 
-      className={`relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
-        isResizing ? 'no-animations' : ''
-      }`}
+      className={`
+        relative
+        min-h-[100dvh]
+        sm:min-h-[calc(var(--vh,1vh)*100)]
+        flex items-center justify-center overflow-hidden
+        px-4 sm:px-6
+        ${isResizing ? 'no-animations' : ''}
+      `}
+      style={{
+        // Only prevent overscroll at the top to stop pull-to-refresh
+        overscrollBehaviorY: 'none'
+      }}
     >
-      {/* Background image */}
+      {/* Background image + overlay */}
       <div className="absolute inset-0">
         <img
           src="/store/FencingEquipmentBg1.jpg"
           alt="Fencing Equipment Store"
-          className="w-full h-full object-cover object-center animate-fade-in will-change-transform-opacity"
+          className="w-full h-full object-cover object-center motion-safe:animate-fade-in"
           fetchPriority="high"
+          decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80 md:from-slate-900/75 md:via-slate-800/65 md:to-slate-900/75"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-slate-800/60 to-slate-900/70" />
       </div>
 
-      {/* Decorative elements - hidden on mobile */}
-      <div className="absolute inset-0 opacity-10 hidden md:block">
-        <div className="absolute top-20 left-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-pulse"></div>
-        <div className="absolute bottom-20 right-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-pulse"></div>
+      {/* Refined decorative elements (softer on mobile) */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-28 sm:top-40 left-1/5 sm:left-1/4 w-px h-32 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12 motion-safe:animate-pulse"></div>
+        <div className="absolute bottom-28 sm:bottom-40 right-1/5 sm:right-1/4 w-px h-32 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12 motion-safe:animate-pulse"></div>
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
-        <div className="space-y-3 md:space-y-4">
-          <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg ${
-            isResizing ? 'transition-none' : 'animate-slide-up'
-          }`}>
-            <span className="block">PROFESSIONAL</span>
-            <span className="block text-amber-400 font-normal drop-shadow-lg">
-              EQUIPMENT
-            </span>
-            <span className="block">COLLECTION</span>
-          </h1>
+      {/* Text content */}
+      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="overflow-hidden">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
+              <span className="block opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_0.4s_forwards]">
+                PROFESSIONAL
+              </span>
+              <span className="block text-amber-400 font-normal drop-shadow-lg opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_0.7s_forwards]">
+                EQUIPMENT
+              </span>
+              <span className="block opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_1s_forwards]">
+                COLLECTION
+              </span>
+            </h1>
+          </div>
 
-          {/* Decorative divider - mobile responsive */}
-          <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
-            isResizing ? 'opacity-100 transition-none' : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1s_forwards]'
-          }`}>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
-            <div className="w-6 h-6 md:w-8 md:h-8 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-amber-400 rounded-full animate-pulse"></div>
+          <div className="flex items-center justify-center gap-3 sm:gap-4 opacity-0 motion-safe:animate-[fadeIn_0.7s_ease-out_1.3s_forwards]">
+            <div className="w-14 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
+            <div className="w-10 sm:w-12 h-10 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-105 hover:border-amber-400 transition-all duration-300 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
+              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full motion-safe:animate-pulse" />
             </div>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
+            <div className="w-14 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
-        <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 ${
-          isResizing ? 'opacity-100 transition-none' : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
-        }`}>
-          Premium fencing equipment crafted for champions. From beginner
-          essentials to tournament-grade gear, discover excellence in every
-          piece.
-        </p>
+        <div className="overflow-hidden">
+          <p className="text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-2xl sm:max-w-3xl mx-auto drop-shadow-sm opacity-0 motion-safe:animate-[fadeIn_0.7s_ease-out_1.6s_forwards]">
+            Premium fencing equipment crafted for champions. From beginner
+            essentials to tournament-grade gear, discover excellence in every
+            piece.
+          </p>
+        </div>
       </div>
 
-      {/* CSS for no-animations */}
       <style jsx>{`
         .no-animations * {
           animation-duration: 0s !important;
           animation-delay: 0s !important;
           transition-duration: 0s !important;
+        }
+        
+        @keyframes slideUp { 
+          from { opacity: 0; transform: translateY(24px) } 
+          to { opacity: 1; transform: translateY(0) } 
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
     </section>
