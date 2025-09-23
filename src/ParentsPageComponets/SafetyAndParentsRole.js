@@ -1,4 +1,5 @@
-import React from "react";
+import React, {  useRef, useCallback, useMemo } from "react";
+
 import Navbar from "../HomePageComponent/Navbar";
 import InfoBanner from "../HomePageComponent/InfoBanner";
 
@@ -21,16 +22,42 @@ const HERO_QUERY = `*[_type=="heroSection" && slug.current=="parentsRole-section
 function ParentsSafetyHero() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isResizing, setIsResizing] = useState(false);
+  const sectionRef = useRef(null);
 
+  // Stable viewport height fallback for iOS toolbar changes
   useEffect(() => {
-    sanityClient.fetch(HERO_QUERY).then(res => {
-      setData(res);
-      setLoading(false);
-    });
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    
+    setVh();
+    window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    
+    return () => {
+      window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
+    };
   }, []);
 
-  const scrollToSection = (sectionId) => {
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
+    };
+  }, []);
+
+  // Memoize scroll function to prevent recreating on each render
+  const scrollToSection = useCallback((sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({
@@ -38,9 +65,10 @@ function ParentsSafetyHero() {
         block: "start",
       });
     }
-  };
+  }, []);
 
-  const runSecondary = () => {
+  // Memoize secondary CTA handler to prevent recreation
+  const runSecondary = useCallback(() => {
     const a = data?.secondaryCta?.action;
     if (!a) return;
     if (a.startsWith('scroll:')) {
@@ -50,25 +78,42 @@ function ParentsSafetyHero() {
     } else {
       window.open(a, '_self');
     }
-  };
+  }, [data?.secondaryCta?.action]);
 
-  // Handle resize events to optimize performance
-  useEffect(() => {
-    let resizeTimer;
-    function handleResize() {
-      setIsResizing(true);
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        setIsResizing(false);
-      }, 300);
+  // Memoize primary CTA handler
+  const handlePrimaryCTA = useCallback(() => {
+    if (data?.primaryCta?.url) {
+      if (data.primaryCta.url.startsWith('#')) {
+        scrollToSection(data.primaryCta.url.replace('#', ''));
+      } else if (data.primaryCta.url.startsWith('scroll:')) {
+        scrollToSection(data.primaryCta.url.replace('scroll:', ''));
+      } else {
+        scrollToSection("parents-role-safety");
+      }
+    } else {
+      scrollToSection("parents-role-safety");
     }
-    
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(resizeTimer);
-    };
+  }, [data?.primaryCta?.url, scrollToSection]);
+
+  // Fetch data once on mount
+  useEffect(() => {
+    sanityClient.fetch(HERO_QUERY).then(res => {
+      setData(res);
+      setLoading(false);
+    });
   }, []);
+
+  // Memoize image URLs to prevent recalculation
+  const imageUrls = useMemo(() => {
+    if (!data?.background?.asset) return null;
+    
+    const desktopImg = urlFor(data.background.asset).width(1920).format('webp').quality(80).url();
+    const mobileImg = data.backgroundMobile?.asset
+      ? urlFor(data.backgroundMobile.asset).width(768).format('webp').quality(75).url()
+      : null;
+    
+    return { desktopImg, mobileImg };
+  }, [data?.background?.asset, data?.backgroundMobile?.asset]);
 
   if (loading) {
     return (
@@ -78,341 +123,198 @@ function ParentsSafetyHero() {
     );
   }
 
-  if (!data) {
-    return (
-      <section 
-        className={`relative min-h-screen flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
-          isResizing ? 'no-animations' : ''
-        }`}
-      >
-        {/* Fallback Background */}
-        <div className="absolute inset-0">
+  return (
+    <section 
+      ref={sectionRef}
+      data-parents-safety-hero
+      className="
+        relative
+        min-h-screen
+        sm:min-h-[calc(var(--vh,1vh)*100)]
+        flex items-center justify-center overflow-hidden
+        px-4 sm:px-6
+      "
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%",
+        height: "100vh", // Use regular vh for better compatibility
+        minHeight: "100vh"
+      }}
+    >
+      {/* Background */}
+      <div className="absolute inset-0">
+        {!data || !imageUrls ? (
           <img
             src="/parentsComponent/ParentSafetyBg2.png"
             alt="Parents Role & Safety"
-            className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+            className="w-full h-full object-cover object-center"
             fetchPriority="high"
             decoding="async"
+            style={{
+              WebkitTransform: "translateZ(0)",
+              transform: "translateZ(0)"
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 md:from-gray-900/60 md:via-gray-800/50 md:to-gray-900/60"></div>
-        </div>
-
-        {/* Refined fencing motifs - hidden on mobile and during resize */}
-        <div className={`absolute inset-0 opacity-10 hidden md:block transition-opacity duration-300 ${
-          isResizing ? 'opacity-0' : 'opacity-10'
-        }`}>
-          <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-pulse will-change-transform-opacity"></div>
-          <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-pulse will-change-transform-opacity"></div>
-          <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent transform rotate-45 animate-pulse will-change-transform-opacity"></div>
-        </div>
-
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 md:space-y-12">
-          <div className="space-y-4 md:space-y-6">
-            <div className="overflow-hidden">
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg will-change-transform-opacity ${
-                isResizing 
-                  ? 'transition-none' 
-                  : 'animate-slide-up delay-[800ms]'
-              }`}>
-                <span className={`block will-change-transform-opacity ${
-                  isResizing ? 'transition-none' : 'animate-slide-up delay-[1000ms]'
-                }`}>
-                  PARENTS ROLE &
-                </span>
-                <span className={`block text-amber-400 font-normal drop-shadow-lg will-change-transform-opacity ${
-                  isResizing ? 'transition-none' : 'animate-slide-up delay-[1400ms]'
-                }`}>
-                  SAFETY
-                </span>
-                <span className={`block will-change-transform-opacity ${
-                  isResizing ? 'transition-none' : 'animate-slide-up delay-[1800ms]'
-                }`}>
-                  IN FENCING
-                </span>
-              </h1>
-            </div>
-
-            <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
-            }`}>
-              <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
-              <div className="w-10 h-10 md:w-12 md:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-110 hover:border-amber-400 transition-all duration-500 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm will-change-transform">
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full animate-pulse"></div>
-              </div>
-              <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
-            </div>
-          </div>
-
-          <div className="overflow-hidden">
-            <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-light text-white tracking-[0.1em] md:tracking-[0.15em] drop-shadow-md px-4 md:px-0 will-change-transform-opacity ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_2s_forwards]'
-            }`}>
-              ENSURING SAFETY, RESPECT & EXCELLENCE
-            </h2>
-          </div>
-
-          <div className="overflow-hidden">
-            <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 will-change-transform-opacity ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeIn_0.8s_ease-out_2.5s_forwards]'
-            }`}>
-              Learn how modern technology, strict safety gear standards, and a strong code of etiquette keep fencing one of the world's safest sports.
-            </p>
-          </div>
-
-          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 px-4 md:px-0 will-change-transform-opacity ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'animate-[fadeInUp_0.8s_ease-out_1s_forwards]'
-          }`}>
-            <button
-              onClick={() => scrollToSection("parents-role-safety")}
-              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                isResizing 
-                  ? 'opacity-100 transition-none' 
-                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              <span className="relative z-10">Parents & Safety</span>
-            </button>
-
-            <button
-              onClick={() => scrollToSection("safety-info")}
-              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                isResizing 
-                  ? 'opacity-100 transition-none' 
-                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <span className="relative z-10">View Safety Rules</span>
-            </button>
-          </div>
-        </div>
-
-        <style jsx>{`
-          .no-animations * {
-            animation-duration: 0s !important;
-            animation-delay: 0s !important;
-            transition-duration: 0s !important;
-          }
-        `}</style>
-      </section>
-    );
-  }
-
-  const desktopImg = urlFor(data.background.asset).width(1920).format('webp').quality(80).url();
-  const mobileImg = data.backgroundMobile?.asset
-    ? urlFor(data.backgroundMobile.asset).width(768).format('webp').quality(75).url()
-    : null;
-
-  return (
-    <section 
-      className={`relative min-h-screen flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
-        isResizing ? 'no-animations' : ''
-      }`}
-    >
-      {/* Background image + overlay */}
-      <div className="absolute inset-0">
-        {mobileImg ? (
+        ) : imageUrls.mobileImg ? (
           <picture>
-            <source media="(max-width:639px)" srcSet={mobileImg} />
+            <source media="(max-width:639px)" srcSet={imageUrls.mobileImg} />
             <img
-              src={desktopImg}
+              src={imageUrls.desktopImg}
               alt={data.background.alt || "Parents Role & Safety"}
-              className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+              className="w-full h-full object-cover object-center"
               fetchPriority="high"
               decoding="async"
+              style={{
+                WebkitTransform: "translateZ(0)",
+                transform: "translateZ(0)"
+              }}
             />
           </picture>
         ) : (
           <img
-            src={desktopImg}
+            src={imageUrls.desktopImg}
             alt={data.background.alt || "Parents Role & Safety"}
-            className="w-full h-full object-cover animate-fade-in will-change-transform-opacity"
+            className="w-full h-full object-cover object-center"
             fetchPriority="high"
             decoding="async"
+            style={{
+              WebkitTransform: "translateZ(0)",
+              transform: "translateZ(0)"
+            }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 md:from-gray-900/60 md:via-gray-800/50 md:to-gray-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 pointer-events-none" />
       </div>
 
-      {/* Refined fencing motifs - hidden on mobile and during resize */}
-      <div className={`absolute inset-0 opacity-10 hidden md:block transition-opacity duration-300 ${
-        isResizing ? 'opacity-0' : 'opacity-10'
-      }`}>
-        <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-pulse will-change-transform-opacity"></div>
-        <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-pulse will-change-transform-opacity"></div>
-        <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent transform rotate-45 animate-pulse will-change-transform-opacity"></div>
+      {/* Decorative lines (lighter on mobile) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-24 sm:top-40 left-[18%] sm:left-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-24 sm:bottom-40 right-[18%] sm:right-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
+        <div className="absolute top-1/2 left-1/2 w-px h-24 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
       </div>
 
-      {/* Text & CTAs */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 md:space-y-12">
-        <div className="space-y-4 md:space-y-6">
+      {/* Content: mobile-optimized typography and spacing; scales on desktop */}
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
+        <div className="space-y-5 sm:space-y-6">
           <div className="overflow-hidden">
-            <h1 className={`text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg will-change-transform-opacity ${
-              isResizing 
-                ? 'transition-none' 
-                : 'animate-slide-up delay-[800ms]'
-            }`}>
-              <span className={`block will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-slide-up delay-[1000ms]'
-              }`}>
-                {data.title.first}
+            <h1
+              className="
+                font-extralight tracking-tight text-white drop-shadow-lg
+                leading-tight sm:leading-none
+                text-[clamp(1.75rem,5.2vw,3rem)] sm:text-5xl lg:text-6xl
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
+              <span className="block">
+                {data?.title?.first || "PARENTS ROLE &"}
               </span>
-              <span className={`block text-amber-400 font-normal drop-shadow-lg will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-slide-up delay-[1400ms]'
-              }`}>
-                {data.title.second}
+              <span className="block text-amber-400 font-normal drop-shadow-lg">
+                {data?.title?.second || "SAFETY"}
               </span>
-              <span className={`block will-change-transform-opacity ${
-                isResizing ? 'transition-none' : 'animate-slide-up delay-[1800ms]'
-              }`}>
-                {data.title.third}
-              </span>
+              {(data?.title?.third) && (
+                <span className="block">
+                  {data.title.third}
+                </span>
+              )}
             </h1>
           </div>
 
-          <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
-            isResizing 
-              ? 'opacity-100 transition-none' 
-              : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
-          }`}>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
-            <div className="w-10 h-10 md:w-12 md:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-110 hover:border-amber-400 transition-all duration-500 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm will-change-transform">
-              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full animate-pulse" />
+          {/* Center divider motif */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
+            <div className="w-9 sm:w-12 h-9 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
+              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full" />
             </div>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
-        {data.tagline && (
+        {data?.tagline && (
           <div className="overflow-hidden">
-            <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-light text-white tracking-[0.1em] md:tracking-[0.15em] drop-shadow-md px-4 md:px-0 will-change-transform-opacity ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_2s_forwards]'
-            }`}>
+            <h2
+              className="
+                font-light text-white drop-shadow-md
+                tracking-[0.06em] sm:tracking-[0.15em]
+                text-[clamp(1.05rem,2.8vw,1.75rem)] sm:text-2xl lg:text-3xl
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
               {data.tagline}
             </h2>
           </div>
         )}
 
-        {data.description && (
+        {data?.description && (
           <div className="overflow-hidden">
-            <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 will-change-transform-opacity ${
-              isResizing 
-                ? 'opacity-100 transition-none' 
-                : 'opacity-0 animate-[fadeIn_0.8s_ease-out_2.5s_forwards]'
-            }`}>
+            <p
+              className="
+                text-white font-light drop-shadow-sm mx-auto leading-relaxed
+                text-[clamp(0.98rem,2.6vw,1.125rem)] sm:text-lg lg:text-xl
+                max-w-[60ch] sm:max-w-[65ch]
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
               {data.description}
             </p>
           </div>
         )}
 
-        <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 px-4 md:px-0 will-change-transform-opacity ${
-          isResizing 
-            ? 'opacity-100 transition-none' 
-            : 'animate-[fadeInUp_0.8s_ease-out_1s_forwards]'
-        }`}>
-          {data.primaryCta ? (
-            data.primaryCta.url && data.primaryCta.url.startsWith('http') ? (
-              // External link - use anchor tag
-              <a
-                href={data.primaryCta.url}
-                target={data.primaryCta.newTab ? '_blank' : '_self'}
-                rel={data.primaryCta.newTab ? 'noopener noreferrer' : ''}
-                className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                  isResizing 
-                    ? 'opacity-100 transition-none' 
-                    : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
-                }`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <span className="relative z-10">{data.primaryCta.text}</span>
-              </a>
-            ) : (
-              // Internal scroll - use button with scroll functionality
-              <button
-                onClick={() => {
-                  if (data.primaryCta.url && data.primaryCta.url.startsWith('#')) {
-                    scrollToSection(data.primaryCta.url.replace('#', ''));
-                  } else if (data.primaryCta.url && data.primaryCta.url.startsWith('scroll:')) {
-                    scrollToSection(data.primaryCta.url.replace('scroll:', ''));
-                  } else {
-                    scrollToSection("parents-role-safety");
-                  }
-                }}
-                className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                  isResizing 
-                    ? 'opacity-100 transition-none' 
-                    : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
-                }`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <span className="relative z-10">{data.primaryCta.text}</span>
-              </button>
-            )
-          ) : (
-            // Fallback button
-            <button
-              onClick={() => scrollToSection("parents-role-safety")}
-              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                isResizing 
-                  ? 'opacity-100 transition-none' 
-                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.2s_forwards]'
-              }`}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+          {/* Primary CTA */}
+          {data?.primaryCta?.url?.startsWith('http') ? (
+            <a
+              href={data.primaryCta.url}
+              target={data.primaryCta.newTab ? '_blank' : '_self'}
+              rel={data.primaryCta.newTab ? 'noopener noreferrer' : ''}
+              className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              <span className="relative z-10">Parents & Safety</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <span className="relative z-10">{data.primaryCta.text}</span>
+            </a>
+          ) : (
+            <button
+              onClick={handlePrimaryCTA}
+              className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <span className="relative z-10">
+                {data?.primaryCta?.text || "Parents & Safety"}
+              </span>
             </button>
           )}
 
-          {data.secondaryCta ? (
-            <button
-              onClick={runSecondary}
-              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                isResizing 
-                  ? 'opacity-100 transition-none' 
-                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <span className="relative z-10">{data.secondaryCta.text}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => scrollToSection("safety-info")}
-              className={`group relative px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base md:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden will-change-transform ${
-                isResizing 
-                  ? 'opacity-100 transition-none' 
-                  : 'opacity-0 animate-[fadeInUp_0.8s_ease-out_1.4s_forwards]'
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <span className="relative z-10">View Safety Rules</span>
-            </button>
-          )}
+          {/* Secondary CTA */}
+          <button
+            onClick={data?.secondaryCta ? runSecondary : () => scrollToSection("safety-info")}
+            className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <span className="relative z-10">
+              {data?.secondaryCta?.text || "View Safety Rules"}
+            </span>
+          </button>
         </div>
       </div>
-
-      <style jsx>{`
-        .no-animations * {
-          animation-duration: 0s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0s !important;
-        }
-      `}</style>
     </section>
   );
 }
-
 
 /* ==================== INFORMATION SECTION ==================== */
 function ParentsSafetyInfo() {

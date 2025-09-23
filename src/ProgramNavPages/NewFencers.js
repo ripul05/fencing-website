@@ -1,118 +1,188 @@
 import InfoBanner from "../HomePageComponent/InfoBanner";
 import Navbar from "../HomePageComponent/Navbar";
 import FooterSection from "../Sections/FooterSection";
-import { useEffect } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 function NewFencersIntroHeroSection() {
-  // --vh fallback for older browsers
+  const sectionRef = useRef(null);
+
+  // Stable viewport height fallback for iOS toolbar changes
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
+    
     setVh();
-    window.addEventListener("orientationchange", setVh, { passive: true });
     window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    
     return () => {
-      window.removeEventListener("orientationchange", setVh);
       window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
     };
   }, []);
 
-  const scrollToSection = (sectionId) => {
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
+    };
+  }, []);
+
+  // Memoize scroll function to prevent recreating on each render
+  const scrollToSection = useCallback((sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  }, []);
+
+  // Memoize registration handler
+  const handleRegistration = useCallback(() => {
+    window.open("https://texasfencingacademy.glide.page", "_blank", "noopener");
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
+      data-new-fencers-hero
       className="
         relative
-        min-h-[100dvh]
+        min-h-screen
         sm:min-h-[calc(var(--vh,1vh)*100)]
         flex items-center justify-center overflow-hidden
         px-4 sm:px-6
       "
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%",
+        height: "100vh",
+        minHeight: "100vh"
+      }}
     >
-      {/* Background image + overlay */}
+      {/* Background */}
       <div className="absolute inset-0">
         <img
           src="/program/BgImage.jpg"
           alt="New Fencer Introduction Classes"
-          className="w-full h-full object-cover object-center motion-safe:animate-fade-in"
+          className="w-full h-full object-cover object-center"
           fetchPriority="high"
           decoding="async"
+          style={{
+            WebkitTransform: "translateZ(0)",
+            transform: "translateZ(0)"
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 pointer-events-none" />
       </div>
 
-      {/* Refined fencing motifs (softer on mobile) */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-28 sm:top-40 left-1/5 sm:left-1/4 w-px h-32 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12 motion-safe:animate-pulse"></div>
-        <div className="absolute bottom-28 sm:bottom-40 right-1/5 sm:right-1/4 w-px h-32 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12 motion-safe:animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 w-px h-28 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45 motion-safe:animate-pulse"></div>
+      {/* Decorative lines (lighter on mobile) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-24 sm:top-40 left-[18%] sm:left-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-24 sm:bottom-40 right-[18%] sm:right-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
+        <div className="absolute top-1/2 left-1/2 w-px h-24 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
       </div>
 
-      {/* Text & CTAs */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+      {/* Content: mobile-optimized typography and spacing; scales on desktop */}
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
         <div className="space-y-5 sm:space-y-6">
           <div className="overflow-hidden">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
-              <span className="block opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_0.4s_forwards]">
-                NEW FENCERS
-              </span>
-              <span className="block text-amber-400 font-normal drop-shadow-lg opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_0.7s_forwards]">
+            <h1
+              className="
+                font-extralight tracking-tight text-white drop-shadow-lg
+                leading-tight sm:leading-none
+                text-[clamp(1.75rem,5.2vw,3rem)] sm:text-5xl lg:text-6xl
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
+              <span className="block">NEW FENCERS</span>
+              <span className="block text-amber-400 font-normal drop-shadow-lg">
                 INTRODUCTION CLASS
               </span>
-              <span className="block opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_1s_forwards] text-base sm:text-lg tracking-[0.06em] sm:tracking-[0.15em]">
+              <span className="block text-sm sm:text-base lg:text-lg tracking-[0.06em] sm:tracking-[0.15em] font-light">
                 TEXAS FENCING ACADEMY
               </span>
             </h1>
           </div>
 
-          <div className="flex items-center justify-center gap-3 sm:gap-4 opacity-0 motion-safe:animate-[fadeIn_0.7s_ease-out_1.3s_forwards]">
-            <div className="w-14 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
-            <div className="w-10 sm:w-12 h-10 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center hover:scale-105 hover:border-amber-400 transition-all duration-300 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
-              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full motion-safe:animate-pulse" />
+          {/* Center divider motif */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
+            <div className="w-9 sm:w-12 h-9 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
+              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full" />
             </div>
-            <div className="w-14 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
         <div className="overflow-hidden">
-          <h2 className="text-lg sm:text-2xl lg:text-3xl font-light text-white tracking-[0.08em] sm:tracking-[0.15em] drop-shadow-md opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_1.6s_forwards]">
+          <h2
+            className="
+              font-light text-white drop-shadow-md
+              tracking-[0.06em] sm:tracking-[0.15em]
+              text-[clamp(1.05rem,2.8vw,1.75rem)] sm:text-2xl lg:text-3xl
+            "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
+          >
             YOUR FIRST MONTH IN FENCING
           </h2>
         </div>
 
         <div className="overflow-hidden">
-          <p className="text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-2xl sm:max-w-3xl mx-auto drop-shadow-sm opacity-0 motion-safe:animate-[fadeIn_0.7s_ease-out_2s_forwards]">
+          <p
+            className="
+              text-white font-light drop-shadow-sm mx-auto leading-relaxed
+              text-[clamp(0.98rem,2.6vw,1.125rem)] sm:text-lg lg:text-xl
+              max-w-[60ch] sm:max-w-[65ch]
+            "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
+          >
             Begin your fencing journey with comprehensive access to all our Épée and Saber classes. Discover the joy of fencing with expert instruction in a welcoming environment.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_2.3s_forwards]">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
           <button
-            onClick={() => window.open("https://texasfencingacademy.glide.page", "_blank", "noopener")}
-            className="group relative px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] hover:from-amber-600 hover:to-amber-700 transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
+            onClick={handleRegistration}
+            className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             <span className="relative z-10">Register Now</span>
           </button>
 
           <button
             onClick={() => scrollToSection("intro-class-info")}
-            className="group relative px-6 sm:px-8 py-3.5 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-[1.03] hover:shadow-lg backdrop-blur-sm transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
+            className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <span className="relative z-10">Learn More</span>
           </button>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
-      `}</style>
     </section>
   );
 }

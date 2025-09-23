@@ -1,226 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "./Cart/CartContex";
 import { sanityFetch } from '../Sanity/sanityClient'
 
-const equipmentData = [
-  {
-    id: 102126284,
-    title: "Epee Starter Kit (9 pieces)",
-    price: "$396.00",
-    category: "Starter Kits",
-    description:
-      "Complete epee starter kit with all essential equipment for beginners. Includes jacket, mask, glove, weapon, and protective gear.",
-    image: "equipment/EpeeStarterKit.jpg",
-    badge: "Complete Kit",
-    // Stripe
-    priceId: "price_123_epee_starter", // from your Stripe Dashboard
-    paymentLink: "https://buy.stripe.com/4gwcOF1Zp1ZLgkU5kR", 
-  },
-  {
-    id: 102126285,
-    title: "Saber Starter Kit (10 pieces)",
-    price: "$449.00",
-    category: "Starter Kits",
-    description:
-      "Comprehensive saber starter kit with lamé and all necessary equipment for competitive saber fencing.",
-    image: "equipment/SaberStarterKit.jpg",
-    badge: "Complete Kit",
-    priceId: "price_123_saber_starter",
-    paymentLink: "https://buy.stripe.com/aEU8yp5bB7k57Oo00w",
-  },
-  {
-    id: 102126286,
-    title: "Jacket",
-    price: "$88.00",
-    category: "Protective Gear",
-    description:
-      "High-quality fencing jacket with reinforced padding and proper ventilation for maximum protection and comfort.",
-    image: "equipment/FencingJacket.jpg",
-  },
-  {
-    id: 102126287,
-    title: "Knickers",
-    price: "$55.00",
-    category: "Protective Gear",
-    description:
-      "Professional fencing knickers with reinforced knee area and comfortable fit for optimal mobility.",
-    image: "equipment/FencingKnickers.jpg",
-  },
-  {
-    id: 102126288,
-    title: "Glove",
-    price: "$12.00",
-    category: "Protective Gear",
-    description:
-      "Comfortable fencing glove with excellent grip and dexterity for precise weapon handling.",
-    image: "equipment/FencingGlove.jpg",
-  },
-  {
-    id: 102126290,
-    title: "Epee Mask",
-    price: "$58.00",
-    category: "Masks",
-    description:
-      "Professional epee mask with excellent visibility and ventilation. Meets all safety standards.",
-    image: "equipment/EpeeMask.jpg",
-  },
-  {
-    id: 102126291,
-    title: "Saber Mask",
-    price: "$98.00",
-    category: "Masks",
-    description:
-      "Specialized saber mask with conductive bib for electric scoring. Tournament approved.",
-    image: "equipment/SaberMask.jpg",
-  },
-  {
-    id: 102126292,
-    title: "Nylon Underarm Protector",
-    price: "$22.00",
-    category: "Protective Gear",
-    description:
-      "Essential underarm protection for safe fencing practice and competition.",
-    image: "equipment/UnderarmProtector.jpg",
-  },
-  {
-    id: 102126293,
-    title: "Chestplate",
-    price: "$30.00",
-    category: "Protective Gear",
-    description:
-      "Additional chest protection for enhanced safety during training and competition.",
-    image: "equipment/Chestplate.jpg",
-  },
-  {
-    id: 102126295,
-    title: "Epee",
-    price: "$50.00",
-    category: "Weapons",
-    description:
-      "Professional epee weapon with balanced weight distribution and comfortable grip.",
-    image: "equipment/Epee.jpg",
-  },
-  {
-    id: 102126296,
-    title: "Saber",
-    price: "$50.00",
-    category: "Weapons",
-    description:
-      "High-quality saber weapon designed for precision and durability in competition.",
-    image: "equipment/Saber.jpg",
-  },
-  {
-    id: 102126297,
-    title: "TFA Team T-Shirt",
-    price: "$15.00",
-    category: "Apparel",
-    description:
-      "Official Texas Fencing Academy team t-shirt. Comfortable cotton blend.",
-    image: "equipment/TFAShirt.jpg",
-  },
-  {
-    id: 102126298,
-    title: "TFA Team Jacket",
-    price: "$135.00",
-    category: "Apparel",
-    description:
-      "Premium TFA team jacket with embroidered logo. Perfect for tournaments and events.",
-    image: "equipment/TFAJacket.jpg",
-  },
-  {
-    id: 111689421,
-    title: "Copper Saber Lame",
-    price: "$94.00",
-    category: "Electric Equipment",
-    description:
-      "Professional copper saber lamé for electric scoring. Durable and conductive.",
-    image: "equipment/CopperLame.jpg",
-  },
-  {
-    id: 102315415,
-    title: "Epee Body Cord",
-    price: "$25.00",
-    category: "Electric Equipment",
-    description:
-      "Reliable epee body cord for electric scoring systems. Tournament quality.",
-    image: "equipment/EpeeBodyCord.jpg",
-  },
-  {
-    id: 103890147,
-    title: "Epee - Wired Blade",
-    price: "$35.00",
-    category: "Weapons",
-    description:
-      "Pre-wired epee blade ready for electric scoring. Professional grade.",
-    image: "equipment/WiredEpeeBlade.jpg",
-  },
-  {
-    id: 111670567,
-    title: "Saber Body Cord",
-    price: "$25.00",
-    category: "Electric Equipment",
-    description:
-      "Professional saber body cord for electric scoring. Reliable connection.",
-    image: "equipment/SaberBodyCord.jpg",
-  },
-  {
-    id: 104037303,
-    title: "Stainless Steel Saber Lamé",
-    price: "$206.00",
-    category: "Electric Equipment",
-    description:
-      "Premium stainless steel saber lamé. Superior durability and conductivity.",
-    image: "equipment/SteelLame.jpg",
-    badge: "Premium",
-  },
-  {
-    id: 109361582,
-    title: "Electric FIE Saber Glove",
-    price: "$69.00",
-    category: "Electric Equipment",
-    description:
-      "FIE approved electric saber glove with conductive cuff. Tournament standard.",
-    image: "equipment/ElectricGlove.jpg",
-    badge: "FIE Approved",
-  },
-  {
-    id: 116484287,
-    title: "Mask Cord",
-    price: "$10.00",
-    category: "Electric Equipment",
-    description:
-      "Essential mask cord for electric scoring connection. Reliable and durable.",
-    image: "equipment/MaskCord.jpg",
-  },
-  {
-    id: 116484295,
-    title: "Equipment Rental Fee (per item)",
-    price: "$10.00",
-    category: "Services",
-    description:
-      "Rental fee for individual equipment items. Perfect for trying before buying.",
-    image: "equipment/EquipmentRental.jpg",
-  },
-  {
-    id: 118034037,
-    title: "Saber Blade",
-    price: "$20.00",
-    category: "Weapons",
-    description:
-      "Replacement saber blade. High-quality steel with proper flexibility.",
-    image: "equipment/SaberBlade.jpg",
-  },
-  {
-    id: 173741927,
-    title: "TFA Saber Body Cord",
-    price: "$25.00",
-    category: "Electric Equipment",
-    description:
-      "Custom TFA saber body cord. Reliable performance for training and competition.",
-    image: "equipment/TFASaberCord.jpg",
-  },
-];
 
 const categories = [
   "All Equipment",
@@ -244,95 +26,134 @@ const sortOptions = [
 ];
 
 function StoreHeroSection() {
-  const [isResizing, setIsResizing] = useState(false);
+  const sectionRef = useRef(null);
 
-  // Handle resize events for performance
+  // Stable viewport height fallback for iOS toolbar changes
   useEffect(() => {
-    let resizeTimer;
-    function handleResize() {
-      setIsResizing(true);
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        setIsResizing(false);
-      }, 300);
-    }
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
     
-    window.addEventListener("resize", handleResize);
+    setVh();
+    window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    
     return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(resizeTimer);
+      window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
+    };
+  }, []);
+
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
     };
   }, []);
 
   return (
     <section 
-      className={`
-        relative min-h-[50vh] md:min-h-[60vh] 
+      ref={sectionRef}
+      data-store-hero
+      className="
+        relative 
+        min-h-[50vh] md:min-h-[60vh]
         flex items-center justify-center overflow-hidden 
-        px-4 md:px-6 contain-layout-paint
-        ${isResizing ? 'no-animations' : ''}
-      `}
+        px-4 sm:px-6
+      "
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%"
+      }}
     >
-      {/* Background image + overlay */}
+      {/* Background */}
       <div className="absolute inset-0">
         <img
           src="/store/FencingEquipmentBg1.jpg"
           alt="Fencing Equipment Store"
-          className="w-full h-full object-cover object-center animate-fade-in will-change-transform-opacity"
+          className="w-full h-full object-cover object-center"
           fetchPriority="high"
+          decoding="async"
+          style={{
+            WebkitTransform: "translateZ(0)",
+            transform: "translateZ(0)"
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80 md:from-slate-900/75 md:via-slate-800/65 md:to-slate-900/75" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80 md:from-slate-900/75 md:via-slate-800/65 md:to-slate-900/75 pointer-events-none" />
       </div>
 
-      {/* Decorative elements - hidden on mobile */}
-      <div className="absolute inset-0 opacity-10 hidden md:block">
-        <div className="absolute top-20 left-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-pulse"></div>
-        <div className="absolute bottom-20 right-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-pulse"></div>
+      {/* Decorative lines (hidden on mobile, lighter on desktop) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none hidden md:block">
+        <div className="absolute top-20 left-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-20 right-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
       </div>
 
-      {/* Text content */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
+      {/* Content: mobile-optimized typography and spacing */}
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-6 md:space-y-8"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
         <div className="space-y-3 md:space-y-4">
-          <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg ${
-            isResizing ? 'transition-none' : 'animate-slide-up'
-          }`}>
+          <h1
+            className="
+              font-extralight tracking-tight text-white drop-shadow-lg
+              leading-none
+              text-[clamp(1.5rem,4.5vw,2.5rem)] md:text-5xl lg:text-6xl
+            "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
+          >
             <span className="block">PROFESSIONAL</span>
             <span className="block text-amber-400 font-normal drop-shadow-lg">EQUIPMENT</span>
             <span className="block">COLLECTION</span>
           </h1>
 
           {/* Decorative divider - mobile responsive */}
-          <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
-            isResizing ? 'opacity-100 transition-none' : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1s_forwards]'
-          }`}>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
-            <div className="w-6 h-6 md:w-8 md:h-8 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm hover:scale-105 hover:border-amber-400 transition-all duration-300">
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-amber-400 rounded-full animate-pulse" />
+          <div className="flex items-center justify-center gap-3 md:gap-4">
+            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
+            <div className="w-6 h-6 md:w-8 md:h-8 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-amber-400 rounded-full" />
             </div>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
+            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
-        <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 ${
-          isResizing ? 'opacity-100 transition-none' : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
-        }`}>
+        <p
+          className="
+            text-white font-light drop-shadow-sm mx-auto leading-relaxed
+            text-[clamp(0.95rem,2.4vw,1.125rem)] lg:text-xl
+            max-w-3xl px-4 md:px-0
+          "
+          style={{
+            WebkitFontSmoothing: "antialiased",
+            MozOsxFontSmoothing: "grayscale"
+          }}
+        >
           Premium fencing equipment crafted for champions. From beginner
           essentials to tournament-grade gear, discover excellence in every
           piece.
         </p>
       </div>
-
-      {/* CSS for no-animations */}
-      <style jsx>{`
-        .no-animations * {
-          animation-duration: 0s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0s !important;
-        }
-      `}</style>
     </section>
   );
 }
+
 
 
 function StoreFilters({
@@ -604,11 +425,6 @@ function EquipmentCard({ item, index, loaded, onRequestService }) {
     </div>
   )
 }
-
-
-
-
-
 
 export default function EquipmentStore() {
   const [loaded, setLoaded] = useState(false);
@@ -936,7 +752,7 @@ export default function EquipmentStore() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center">
             <a
-              href="mailto:info@texasfencingacademy.org"
+              href="mailto:rparker241@gmail.com"
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 md:px-10 py-3 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-amber-500/25 flex items-center justify-center space-x-2 text-sm md:text-base"
             >
               <svg
@@ -955,7 +771,7 @@ export default function EquipmentStore() {
               <span>Email Our Experts</span>
             </a>
             <a
-              href="tel:+1234567890"
+              href="tel:+15124969022"
               className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-slate-900 px-6 md:px-10 py-3 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2 text-sm md:text-base"
             >
               <svg

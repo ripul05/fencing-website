@@ -10,6 +10,7 @@ import FooterSection from "../../Sections/FooterSection";
 
 function HeroFounderSection({ posterSrc, videoSrc }) {
   const videoRef = useRef(null);
+  const sectionRef = useRef(null);
   const [enableVideo, setEnableVideo] = useState(false);
 
   // Stable viewport height fallback for iOS toolbar changes
@@ -18,12 +19,29 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
+    
     setVh();
     window.addEventListener("resize", setVh, { passive: true });
     window.addEventListener("orientationchange", setVh, { passive: true });
+    
     return () => {
       window.removeEventListener("resize", setVh);
       window.removeEventListener("orientationchange", setVh);
+    };
+  }, []);
+
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
     };
   }, []);
 
@@ -65,14 +83,23 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
 
   return (
     <section
+      ref={sectionRef}
+      data-hero-founder
       className="
         relative
-        min-h-[100dvh]
+        min-h-screen
         sm:min-h-[calc(var(--vh,1vh)*100)]
         flex items-center justify-center overflow-hidden
         px-4 sm:px-6
       "
-      style={{ overscrollBehavior: "none" }}
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%",
+        height: "100vh", // Use regular vh for better compatibility
+        minHeight: "100vh"
+      }}
     >
       {/* Background */}
       <div className="absolute inset-0">
@@ -83,6 +110,10 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
             className="w-full h-full object-cover object-center"
             fetchPriority="high"
             decoding="async"
+            style={{
+              WebkitTransform: "translateZ(0)",
+              transform: "translateZ(0)"
+            }}
           />
         ) : (
           <video
@@ -95,6 +126,10 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
             disablePictureInPicture
             className="w-full h-full object-cover"
             poster={posterSrc}
+            style={{
+              WebkitTransform: "translateZ(0)",
+              transform: "translateZ(0)"
+            }}
           >
             <source src={`${videoSrc}#t=0.001`} type="video/mp4" />
           </video>
@@ -110,7 +145,13 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
       </div>
 
       {/* Content: mobile-optimized typography and spacing; scales on desktop */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
         <div className="space-y-5 sm:space-y-6">
           <div className="overflow-hidden">
             <h1
@@ -119,6 +160,10 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
                 leading-tight sm:leading-none
                 text-[clamp(1.75rem,5.2vw,3rem)] sm:text-5xl lg:text-6xl
               "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
             >
               <span className="block">FROM OUR</span>
               <span className="block text-amber-400 font-normal drop-shadow-lg">
@@ -144,6 +189,10 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
               tracking-[0.06em] sm:tracking-[0.15em]
               text-[clamp(1.05rem,2.8vw,1.75rem)] sm:text-2xl lg:text-3xl
             "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
           >
             VINCENT BRADFORD & RAY PARKER
           </h2>
@@ -156,6 +205,10 @@ function HeroFounderSection({ posterSrc, videoSrc }) {
               text-[clamp(0.98rem,2.6vw,1.125rem)] sm:text-lg lg:text-xl
               max-w-[60ch] sm:max-w-[65ch]
             "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
           >
             Meet the visionaries behind Texas Fencing Academy and discover their passion
             for developing the next generation of fencers through excellence and dedication.

@@ -1,64 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCart } from './Cart/CartContex'
 import { sanityFetch } from '../Sanity/sanityClient'
-
-const repairData = [
-  {
-    id: 102359873,
-    title: "Equipment Repair - Basic",
-    price: "$5.00",
-    category: "Basic Repairs",
-    description: "Basic equipment repair service for minor issues. Includes inspection, cleaning, and simple adjustments to get your gear back in working condition.",
-    image: "repairs/BasicRepair.jpg",
-    turnaround: "1-2 days"
-  },
-  {
-    id: 102359892,
-    title: "Equipment Repair - Standard",
-    price: "$10.00",
-    category: "Standard Repairs",
-    description: "Standard repair service for moderate equipment issues. Includes part replacement, electrical work, and comprehensive testing.",
-    image: "repairs/StandardRepair.jpg",
-    turnaround: "3-5 days"
-  },
-  {
-    id: 102359893,
-    title: "Equipment Repair - Premium",
-    price: "$20.00",
-    category: "Premium Repairs",
-    description: "Comprehensive repair service for complex issues. Includes full restoration, advanced diagnostics, and quality guarantee.",
-    image: "repairs/PremiumRepair.jpg",
-    turnaround: "5-7 days",
-    badge: "Most Popular"
-  },
-  {
-    id: 102359894,
-    title: "Mask Repair Service",
-    price: "$15.00",
-    category: "Specialized Repairs",
-    description: "Professional mask repair including mesh replacement, padding renewal, and electrical connection restoration for fencing masks.",
-    image: "repairs/MaskRepair.jpg",
-    turnaround: "3-4 days"
-  },
-  {
-    id: 102359895,
-    title: "Weapon Rewiring",
-    price: "$25.00",
-    category: "Specialized Repairs",
-    description: "Complete weapon rewiring service for epee and saber. Includes new wiring, tip replacement, and electrical testing.",
-    image: "repairs/WeaponRewiring.jpg",
-    turnaround: "4-6 days"
-  },
-  {
-    id: 102359896,
-    title: "Lamé Repair & Restoration",
-    price: "$30.00",
-    category: "Specialized Repairs",
-    description: "Professional lamé repair service including patch work, connection restoration, and conductivity testing for saber lamés.",
-    image: "repairs/LameRepair.jpg",
-    turnaround: "5-7 days"
-  }
-]
 
 const categories = [
   "All Repairs",
@@ -79,90 +21,133 @@ const sortOptions = [
 ]
 
 function RepairsHeroSection() {
-  const [isResizing, setIsResizing] = useState(false);
+  const sectionRef = useRef(null);
 
-  // Handle resize events for performance
+  // Stable viewport height fallback for iOS toolbar changes
   useEffect(() => {
-    let resizeTimer;
-    function handleResize() {
-      setIsResizing(true);
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        setIsResizing(false);
-      }, 300);
-    }
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
     
-    window.addEventListener("resize", handleResize);
+    setVh();
+    window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    
     return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(resizeTimer);
+      window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
+    };
+  }, []);
+
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
     };
   }, []);
 
   return (
     <section 
-      className={`relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden px-4 md:px-6 contain-layout-paint ${
-        isResizing ? 'no-animations' : ''
-      }`}
+      ref={sectionRef}
+      data-repairs-hero
+      className="
+        relative 
+        min-h-[50vh] md:min-h-[60vh] 
+        flex items-center justify-center overflow-hidden 
+        px-4 sm:px-6
+      "
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%"
+      }}
     >
-      {/* Background image */}
+      {/* Background */}
       <div className="absolute inset-0">
         <img
           src="/store/FencingRepairBg.jpg"
           alt="Fencing Equipment Repairs"
-          className="w-full h-full object-cover object-center animate-fade-in will-change-transform-opacity"
+          className="w-full h-full object-cover object-center"
           fetchPriority="high"
+          decoding="async"
+          style={{
+            WebkitTransform: "translateZ(0)",
+            transform: "translateZ(0)"
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80 md:from-slate-900/75 md:via-slate-800/65 md:to-slate-900/75"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/70 to-slate-900/80 md:from-slate-900/75 md:via-slate-800/65 md:to-slate-900/75 pointer-events-none" />
       </div>
 
-      {/* Decorative elements - hidden on mobile */}
-      <div className="absolute inset-0 opacity-10 hidden md:block">
-        <div className="absolute top-20 left-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent transform rotate-12 animate-pulse"></div>
-        <div className="absolute bottom-20 right-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent transform -rotate-12 animate-pulse"></div>
+      {/* Decorative lines (hidden on mobile, lighter on desktop) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none hidden md:block">
+        <div className="absolute top-20 left-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-20 right-1/4 w-px h-32 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
+      {/* Content: mobile-optimized typography and spacing */}
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-6 md:space-y-8"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
         <div className="space-y-3 md:space-y-4">
-          <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extralight tracking-tight leading-none text-white drop-shadow-lg ${
-            isResizing ? 'transition-none' : 'animate-slide-up'
-          }`}>
+          <h1
+            className="
+              font-extralight tracking-tight text-white drop-shadow-lg
+              leading-none
+              text-[clamp(1.5rem,4.5vw,2.5rem)] md:text-5xl lg:text-6xl
+            "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
+          >
             <span className="block">PROFESSIONAL</span>
             <span className="block text-amber-400 font-normal drop-shadow-lg">REPAIRS</span>
             <span className="block">& RESTORATION</span>
           </h1>
 
           {/* Decorative divider - mobile responsive */}
-          <div className={`flex items-center justify-center space-x-3 md:space-x-4 ${
-            isResizing ? 'opacity-100 transition-none' : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1s_forwards]'
-          }`}>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
+          <div className="flex items-center justify-center gap-3 md:gap-4">
+            <div className="w-12 md:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
             <div className="w-6 h-6 md:w-8 md:h-8 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-amber-400 rounded-full animate-pulse"></div>
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-amber-400 rounded-full" />
             </div>
-            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
+            <div className="w-12 md:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
-        <p className={`text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-3xl mx-auto drop-shadow-sm px-4 md:px-0 ${
-          isResizing ? 'opacity-100 transition-none' : 'opacity-0 animate-[fadeIn_0.8s_ease-out_1.5s_forwards]'
-        }`}>
+        <p
+          className="
+            text-white font-light drop-shadow-sm mx-auto leading-relaxed
+            text-[clamp(0.95rem,2.4vw,1.125rem)] lg:text-xl
+            max-w-3xl px-4 md:px-0
+          "
+          style={{
+            WebkitFontSmoothing: "antialiased",
+            MozOsxFontSmoothing: "grayscale"
+          }}
+        >
           Expert repair services with guaranteed quality. From basic maintenance 
           to complete restoration, we restore your equipment to championship performance.
         </p>
       </div>
-
-      {/* CSS for no-animations */}
-      <style jsx>{`
-        .no-animations * {
-          animation-duration: 0s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0s !important;
-        }
-      `}</style>
     </section>
-  )
+  );
 }
+
 
 function RepairsFilters({ selectedCategory, onCategoryChange, sortBy, onSortChange, searchTerm, onSearchChange }) {
   const [searchFocused, setSearchFocused] = useState(false)
@@ -722,7 +707,7 @@ export default function RepairsPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center">
             <a
-              href="mailto:repairs@texasfencingacademy.org"
+              href="mailto:rparker241@gmail.com"
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 md:px-10 py-3 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-amber-500/25 flex items-center justify-center space-x-2 text-sm md:text-base"
             >
               <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -731,7 +716,7 @@ export default function RepairsPage() {
               <span>Email for Quote</span>
             </a>
             <a
-              href="tel:+1234567890"
+              href="tel:+15124969022"
               className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-slate-900 px-6 md:px-10 py-3 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2 text-sm md:text-base"
             >
               <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

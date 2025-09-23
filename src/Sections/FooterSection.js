@@ -14,7 +14,7 @@ export default function FooterSection() {
   };
 
   const generateMailto = (subject = 'Inquiry') => {
-    return `mailto:ray@texasfencingacademy.org?subject=${encodeURIComponent(subject)}`;
+    return `mailto:rparker241@gmail.com?subject=${encodeURIComponent(subject)}`;
   };
 
   return (
@@ -62,11 +62,11 @@ export default function FooterSection() {
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-white text-sm sm:text-base break-all">ray@texasfencingacademy.org</div>
+                  <div className="font-medium text-white text-sm sm:text-base break-all">rparker241@gmail.com</div>
                   <div className="text-xs sm:text-sm text-slate-500">Send us a message</div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard('ray@texasfencingacademy.org')}
+                  onClick={() => copyToClipboard('rparker241@gmail.com')}
                   className="text-slate-500 hover:text-amber-400 transition-colors p-1 flex-shrink-0"
                   title="Copy email"
                 >

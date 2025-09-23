@@ -1,130 +1,192 @@
-import { useState, useEffect} from "react";
+import { useState, useEffect, useRef, useCallback} from "react";
 import Navbar from "../HomePageComponent/Navbar";
 import InfoBanner from "../HomePageComponent/InfoBanner";
 
 function HomeschoolPEHeroSection() {
-  // --vh fallback for browsers without dvh
+  const sectionRef = useRef(null);
+
+  // Stable viewport height fallback for iOS toolbar changes
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
+    
     setVh();
-    window.addEventListener("orientationchange", setVh, { passive: true });
     window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    
     return () => {
-      window.removeEventListener("orientationchange", setVh);
       window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
     };
   }, []);
 
-  const desktopImg = "/homeschoolPe/homeschoolbg.png";
-  const mobileImg = "/homeschoolPe/homeschoolbg.png";
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
+    };
+  }, []);
+
+  // Memoize scroll function to prevent recreating on each render
+  const scrollToInfo = useCallback((e) => {
+    e.preventDefault();
+    const el = document.querySelector("#info");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  // Memoize phone handler
+  const handlePhoneCall = useCallback(() => {
+    window.location.href = "tel:512-555-0123";
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
+      data-homeschool-pe-hero
       className="
         relative
-        min-h-[100dvh]
+        min-h-screen
         sm:min-h-[calc(var(--vh,1vh)*100)]
         flex items-center justify-center overflow-hidden
         px-4 sm:px-6
       "
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%",
+        height: "100vh",
+        minHeight: "100vh"
+      }}
     >
-      {/* BG Image & Overlay */}
+      {/* Background */}
       <div className="absolute inset-0">
-        <picture>
-          <source media="(max-width:639px)" srcSet={mobileImg} />
-          <img
-            src={desktopImg}
-            alt="Homeschool fencing training Texas Fencing Academy"
-            className="w-full h-full object-cover object-center"
-            fetchPriority="high"
-            decoding="async"
-          />
-        </picture>
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/85 via-primary-800/70 to-amber-50/10" />
+        <img
+          src="/homeschoolPe/homeschoolbg.png"
+          alt="Homeschool fencing training Texas Fencing Academy"
+          className="w-full h-full object-cover object-center"
+          fetchPriority="high"
+          decoding="async"
+          style={{
+            WebkitTransform: "translateZ(0)",
+            transform: "translateZ(0)"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/85 via-primary-800/70 to-amber-50/10 pointer-events-none" />
       </div>
 
-      {/* Fencing Motifs (reduced motion on phones) */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-28 sm:top-32 left-1/5 sm:left-1/4 w-px h-32 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12 motion-safe:animate-pulse"></div>
-        <div className="absolute bottom-28 sm:bottom-32 right-1/5 sm:right-1/4 w-px h-32 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12 motion-safe:animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 w-px h-28 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45 motion-safe:animate-pulse"></div>
+      {/* Decorative lines (lighter on mobile) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-24 sm:top-40 left-[18%] sm:left-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-24 sm:bottom-40 right-[18%] sm:right-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
+        <div className="absolute top-1/2 left-1/2 w-px h-24 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12 py-16 sm:py-20">
-        {/* Heading */}
+      {/* Content: mobile-optimized typography and spacing; scales on desktop */}
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12 py-16 sm:py-20"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
         <div className="space-y-5 sm:space-y-6">
           <div className="overflow-hidden">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
-              <span className="block opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_0.4s_forwards]">
-                HOMESCHOOL PE IN
-              </span>
-              <span className="block text-amber-400 font-normal drop-shadow-lg opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_0.7s_forwards]">
+            <h1
+              className="
+                font-extralight tracking-tight text-white drop-shadow-lg
+                leading-tight sm:leading-none
+                text-[clamp(1.75rem,5.2vw,3rem)] sm:text-5xl lg:text-6xl
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
+              <span className="block">HOMESCHOOL PE IN</span>
+              <span className="block text-amber-400 font-normal drop-shadow-lg">
                 AUSTIN
               </span>
-              <span className="block font-normal opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_1s_forwards] text-base sm:text-lg tracking-[0.08em] sm:tracking-[0.13em]">
+              <span className="block text-sm sm:text-base lg:text-lg font-normal tracking-[0.06em] sm:tracking-[0.13em]">
                 EARN CREDIT THROUGH FENCING
               </span>
             </h1>
           </div>
 
-          <div className="flex items-center justify-center gap-3 sm:gap-4 opacity-0 motion-safe:animate-[fadeIn_0.7s_ease-out_1.3s_forwards]">
-            <div className="w-14 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400"></div>
-            <div className="w-10 sm:w-12 h-10 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
-              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full motion-safe:animate-pulse" />
+          {/* Center divider motif */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
+            <div className="w-9 sm:w-12 h-9 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
+              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full" />
             </div>
-            <div className="w-14 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400"></div>
+            <div className="w-12 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
           </div>
         </div>
 
         <div className="overflow-hidden">
-          <h2 className="text-lg sm:text-2xl lg:text-3xl font-light text-white tracking-[0.06em] sm:tracking-[0.13em] drop-shadow-md opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_1.6s_forwards]">
+          <h2
+            className="
+              font-light text-white drop-shadow-md
+              tracking-[0.06em] sm:tracking-[0.13em]
+              text-[clamp(1.05rem,2.8vw,1.75rem)] sm:text-2xl lg:text-3xl
+            "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
+          >
             Accredited Off-Campus PE & Flexible Schedules – Ages 6–18
           </h2>
         </div>
 
         <div className="overflow-hidden">
-          <p className="text-base sm:text-lg lg:text-xl text-white leading-relaxed font-light max-w-2xl sm:max-w-2xl mx-auto opacity-0 motion-safe:animate-[fadeIn_0.7s_ease-out_2s_forwards]">
+          <p
+            className="
+              text-white font-light drop-shadow-sm mx-auto leading-relaxed
+              text-[clamp(0.98rem,2.6vw,1.125rem)] sm:text-lg lg:text-xl
+              max-w-[60ch] sm:max-w-[65ch]
+            "
+            style={{
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale"
+            }}
+          >
             Accredited for homeschool families. Safe, structured fencing instruction. All equipment provided.
           </p>
         </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 opacity-0 motion-safe:animate-[slideUp_0.7s_ease-out_2.3s_forwards]">
-          <a
-            href="tel:512-555-0123"
-            className="group relative px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] hover:from-amber-600 hover:to-amber-700 transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+          <button
+            onClick={handlePhoneCall}
+            className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             <span className="relative z-10">Book a Free Trial Class</span>
-          </a>
-          <a
-            href="#info"
-            onClick={(e) => {
-              e.preventDefault();
-              const el = document.querySelector("#info");
-              if (el) el.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="group relative px-6 sm:px-8 py-3.5 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-[1.03] hover:shadow-lg backdrop-blur-sm transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
+          </button>
+
+          <button
+            onClick={scrollToInfo}
+            className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <span className="relative z-10">Learn More</span>
-          </a>
+          </button>
         </div>
       </div>
-
-      {/* Keyframes */}
-      <style>{`
-        @keyframes fadeInDown { 0% { opacity: 0; transform: translateY(-20px) } 100% { opacity: 1; transform: translateY(0) } }
-        @keyframes fadeIn { 0% { opacity: 0 } 100% { opacity: 1 } }
-        @keyframes slideUp { 0% { opacity: 0; transform: translateY(24px) } 100% { opacity: 1; transform: translateY(0) } }
-      `}</style>
     </section>
   );
 }
+
 
 function HomeschoolPEInfoSection() {
   // Responsive viewport height fallback for older browsers

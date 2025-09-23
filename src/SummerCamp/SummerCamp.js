@@ -5,6 +5,7 @@ import Navbar from "../HomePageComponent/Navbar";
 import { sanityClient } from "../Sanity/sanityClient";
 import {getVideoAttributes } from '../Sanity/imageBuilder';
 import { SUMMER_CAMP_HERO_QUERY } from "../Sanity/queries";
+import FooterSection from "../Sections/FooterSection";
 
 
 // Helper to fetch hero data
@@ -1194,6 +1195,7 @@ export default function SummerCampPage() {
 
       {/* Gallery Section */}
       <GallerySection/>
+      <FooterSection/>
     </div>
   );
 }

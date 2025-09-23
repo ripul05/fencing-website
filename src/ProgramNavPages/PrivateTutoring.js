@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import InfoBanner from "../HomePageComponent/InfoBanner";
 import Navbar from "../HomePageComponent/Navbar";
 import FooterSection from "../Sections/FooterSection";
@@ -9,10 +9,41 @@ import { PRIVATE_TUTORING_HERO_QUERY } from '../Sanity/queries';
 function PrivateLessonsHeroSection() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isResizing, setIsResizing] = useState(false);
-  const resizeTimer = useRef(null);
+  const sectionRef = useRef(null);
 
-  // Fetch data
+  // Stable viewport height fallback for iOS toolbar changes
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    
+    setVh();
+    window.addEventListener("resize", setVh, { passive: true });
+    window.addEventListener("orientationchange", setVh, { passive: true });
+    
+    return () => {
+      window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
+    };
+  }, []);
+
+  // Prevent pinch-to-zoom during scrolling
+  useEffect(() => {
+    const preventZoomOnScroll = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventZoomOnScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventZoomOnScroll);
+    };
+  }, []);
+
+  // Fetch data once on mount with cancellation
   useEffect(() => {
     let cancelled = false;
     sanityClient
@@ -30,56 +61,30 @@ function PrivateLessonsHeroSection() {
     return () => {
       cancelled = true;
     };
-  }, []); // keep hooks before any return [6]
+  }, []);
 
-  // Stable viewport height for iOS dynamic address bar
-  useEffect(() => {
-    const setVh = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty("--vh", `${vh}px`);
-    };
-    setVh();
-    window.addEventListener("resize", setVh, { passive: true });
-    window.addEventListener("orientationchange", setVh, { passive: true });
-    return () => {
-      window.removeEventListener("resize", setVh);
-      window.removeEventListener("orientationchange", setVh);
-    };
-  }, []); // avoids 100vh jumps on iOS [1][8]
-
-  // Debounced resize: avoid repeated setState during address bar scroll
-  useEffect(() => {
-    const handleResize = () => {
-      setIsResizing(true);
-      clearTimeout(resizeTimer.current);
-      resizeTimer.current = setTimeout(() => setIsResizing(false), 250);
-    };
-    window.addEventListener("resize", handleResize, { passive: true });
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(resizeTimer.current);
-    };
-  }, []); // reduces re-render storms [11][12]
-
-  // Compute asset URLs unconditionally (Rules of Hooks)
-  const desktopImg = useMemo(() => {
+  // Memoize image URLs to prevent recalculation
+  const imageUrls = useMemo(() => {
     if (!data?.background?.asset) return null;
-    return urlFor(data.background.asset).width(1920).format("webp").quality(80).url();
-  }, [data]); // [9]
+    
+    const desktopImg = urlFor(data.background.asset).width(1920).format("webp").quality(80).url();
+    const mobileImg = data.backgroundMobile?.asset
+      ? urlFor(data.backgroundMobile.asset).width(768).format("webp").quality(75).url()
+      : null;
+    
+    return { desktopImg, mobileImg };
+  }, [data?.background?.asset, data?.backgroundMobile?.asset]);
 
-  const mobileImg = useMemo(() => {
-    if (!data?.backgroundMobile?.asset) return null;
-    return urlFor(data.backgroundMobile.asset).width(768).format("webp").quality(75).url();
-  }, [data]); // [9]
-
-  const scrollToSection = (sectionId) => {
+  // Memoize scroll function to prevent recreating on each render
+  const scrollToSection = useCallback((sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  };
+  }, []);
 
-  const runSecondary = () => {
+  // Memoize secondary CTA handler to prevent recreation
+  const runSecondary = useCallback(() => {
     const a = data?.secondaryCta?.action;
     if (!a) return;
     if (a.startsWith("scroll:")) {
@@ -89,141 +94,142 @@ function PrivateLessonsHeroSection() {
     } else {
       window.open(a, "_self");
     }
-  };
+  }, [data?.secondaryCta?.action]);
+
+  // Memoize primary CTA handler
+  const handlePrimaryCTA = useCallback(() => {
+    if (data?.primaryCta?.url) {
+      if (data.primaryCta.url.startsWith("#")) {
+        scrollToSection(data.primaryCta.url.replace("#", ""));
+      } else if (data.primaryCta.url.startsWith("scroll:")) {
+        scrollToSection(data.primaryCta.url.replace("scroll:", ""));
+      } else {
+        window.open("https://texasfencingacademy.glide.page", "_blank");
+      }
+    } else {
+      window.open("https://texasfencingacademy.glide.page", "_blank");
+    }
+  }, [data?.primaryCta?.url, scrollToSection]);
+
+  // Memoize registration handler
+  const handleRegistration = useCallback(() => {
+    window.open("https://texasfencingacademy.glide.page", "_blank");
+  }, []);
 
   if (loading) {
     return (
-      <section className="min-h-[100dvh] sm:min-h-[calc(var(--vh,1vh)*100)] flex items-center justify-center bg-gray-900">
+      <section className="min-h-screen flex items-center justify-center bg-gray-900">
         <p className="text-white text-xl animate-pulse">Loading...</p>
-      </section>
-    );
-  }
-
-  if (!data) {
-    return (
-      <section
-        className={`relative min-h-[100dvh] sm:min-h-[calc(var(--vh,1vh)*100)] flex items-center justify-center overflow-hidden px-4 sm:px-6 ${isResizing ? "no-animations" : ""}`}
-        style={{ overscrollBehavior: "none" }}
-      >
-        {/* Fallback background */}
-        <div className="absolute inset-0">
-          <img
-            src="/program/BgImage.jpg"
-            alt="Private Fencing Lessons"
-            className="w-full h-full object-cover"
-            fetchPriority="high"
-            decoding="sync"
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70" />
-        </div>
-
-        {/* Decorative motifs (no pulse to cut GPU churn) */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
-          <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
-          <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
-          <div className="space-y-5 sm:space-y-6">
-            <div className="overflow-hidden">
-              <h1 className="text-[clamp(1.9rem,5vw,3.25rem)] lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
-                <span className="block">PRIVATE</span>
-                <span className="block text-amber-400 font-normal drop-shadow-lg">FENCING LESSONS</span>
-                <span className="block">TEXAS FENCING ACADEMY</span>
-              </h1>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <div className="w-12 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
-              <div className="w-9 sm:w-12 h-9 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
-                <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-amber-400 rounded-full" />
-              </div>
-              <div className="w-12 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-400" />
-            </div>
-          </div>
-
-          <div className="overflow-hidden">
-            <h2 className="text-[clamp(1.05rem,2.8vw,1.75rem)] lg:text-3xl font-light text-white tracking-[0.06em] sm:tracking-[0.15em] drop-shadow-md">
-              PERSONALIZED ONE-ON-ONE TRAINING
-            </h2>
-          </div>
-
-          <div className="overflow-hidden">
-            <p className="text-[clamp(1rem,2.6vw,1.125rem)] lg:text-xl text-white leading-relaxed font-light max-w-[60ch] sm:max-w-[65ch] mx-auto drop-shadow-sm">
-              Accelerate your fencing journey with customized private instruction. Master techniques, refine strategies, and prepare for competition with dedicated one-on-one coaching from our experienced instructors.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6">
-            <button
-              onClick={() => window.open("https://texasfencingacademy.glide.page", "_blank")}
-              className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] hover:from-amber-600 hover:to-amber-700 transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <span className="relative z-10">Schedule Private Lesson</span>
-            </button>
-
-            <button
-              onClick={() => scrollToSection("private-lessons-info")}
-              className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-[1.03] hover:shadow-lg backdrop-blur-sm transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10">Learn More</span>
-            </button>
-          </div>
-        </div>
       </section>
     );
   }
 
   return (
     <section
-      className={`relative min-h-[100dvh] sm:min-h-[calc(var(--vh,1vh)*100)] flex items-center justify-center overflow-hidden px-4 sm:px-6 ${isResizing ? "no-animations" : ""}`}
-      style={{ overscrollBehavior: "none" }} /* reduce scroll chaining/bounce */
+      ref={sectionRef}
+      data-private-lessons-hero
+      className="
+        relative
+        min-h-screen
+        sm:min-h-[calc(var(--vh,1vh)*100)]
+        flex items-center justify-center overflow-hidden
+        px-4 sm:px-6
+      "
+      style={{ 
+        overscrollBehavior: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "manipulation",
+        WebkitTextSizeAdjust: "100%",
+        height: "100vh",
+        minHeight: "100vh"
+      }}
     >
-      {/* Background image + overlay */}
+      {/* Background */}
       <div className="absolute inset-0">
-        {mobileImg ? (
+        {!data || !imageUrls ? (
+          <img
+            src="/program/BgImage.jpg"
+            alt="Private Fencing Lessons"
+            className="w-full h-full object-cover object-center"
+            fetchPriority="high"
+            decoding="async"
+            style={{
+              WebkitTransform: "translateZ(0)",
+              transform: "translateZ(0)"
+            }}
+          />
+        ) : imageUrls.mobileImg ? (
           <picture>
-            <source media="(max-width:639px)" srcSet={mobileImg} />
+            <source media="(max-width:639px)" srcSet={imageUrls.mobileImg} />
             <img
-              src={desktopImg || mobileImg}
-              alt={data.background.alt || "Private Fencing Lessons"}
-              className="w-full h-full object-cover"
+              src={imageUrls.desktopImg}
+              alt={data.background?.alt || "Private Fencing Lessons"}
+              className="w-full h-full object-cover object-center"
               fetchPriority="high"
-              decoding="sync"
+              decoding="async"
+              style={{
+                WebkitTransform: "translateZ(0)",
+                transform: "translateZ(0)"
+              }}
             />
           </picture>
         ) : (
           <img
-            src={desktopImg}
-            alt={data.background.alt || "Private Fencing Lessons"}
-            className="w-full h-full object-cover"
+            src={imageUrls.desktopImg}
+            alt={data.background?.alt || "Private Fencing Lessons"}
+            className="w-full h-full object-cover object-center"
             fetchPriority="high"
-            decoding="sync"
+            decoding="async"
+            style={{
+              WebkitTransform: "translateZ(0)",
+              transform: "translateZ(0)"
+            }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 pointer-events-none" />
       </div>
 
-      {/* Refined fencing motifs (no pulse to cut GPU churn) */}
+      {/* Decorative lines (lighter on mobile) */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-40 left-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
-        <div className="absolute bottom-40 right-1/4 w-px h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
-        <div className="absolute top-1/2 left-1/2 w-px h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
+        <div className="absolute top-24 sm:top-40 left-[18%] sm:left-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent rotate-12" />
+        <div className="absolute bottom-24 sm:bottom-40 right-[18%] sm:right-1/4 w-px h-28 sm:h-40 bg-gradient-to-b from-amber-500 to-transparent -rotate-12" />
+        <div className="absolute top-1/2 left-1/2 w-px h-24 sm:h-32 bg-gradient-to-b from-amber-400 to-transparent rotate-45" />
       </div>
 
-      {/* Text & CTAs */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+      {/* Content: mobile-optimized typography and spacing; scales on desktop */}
+      <div 
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-8 sm:space-y-12"
+        style={{
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)"
+        }}
+      >
         <div className="space-y-5 sm:space-y-6">
-          <h1 className="text-[clamp(1.9rem,5vw,3.25rem)] lg:text-5xl xl:text-6xl font-extralight tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
-            <span className="block">{data.title.first}</span>
-            <span className="block text-amber-400 font-normal drop-shadow-lg">{data.title.second}</span>
-            <span className="block">{data.title.third}</span>
-          </h1>
+          <div className="overflow-hidden">
+            <h1
+              className="
+                font-extralight tracking-tight text-white drop-shadow-lg
+                leading-tight sm:leading-none
+                text-[clamp(1.75rem,5.2vw,3rem)] sm:text-5xl lg:text-6xl
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
+              <span className="block">
+                {data?.title?.first || "PRIVATE"}
+              </span>
+              <span className="block text-amber-400 font-normal drop-shadow-lg">
+                {data?.title?.second || "FENCING LESSONS"}
+              </span>
+              <span className="block">
+                {data?.title?.third || "TEXAS FENCING ACADEMY"}
+              </span>
+            </h1>
+          </div>
 
+          {/* Center divider motif */}
           <div className="flex items-center justify-center gap-3 sm:gap-4">
             <div className="w-12 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-400" />
             <div className="w-9 sm:w-12 h-9 sm:h-12 border-2 border-white/70 rotate-45 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm">
@@ -233,94 +239,82 @@ function PrivateLessonsHeroSection() {
           </div>
         </div>
 
-        {data.tagline && (
+        {data?.tagline && (
           <div className="overflow-hidden">
-            <h2 className="text-[clamp(1.05rem,2.8vw,1.75rem)] lg:text-3xl font-light text-white tracking-[0.06em] sm:tracking-[0.15em] drop-shadow-md">
+            <h2
+              className="
+                font-light text-white drop-shadow-md
+                tracking-[0.06em] sm:tracking-[0.15em]
+                text-[clamp(1.05rem,2.8vw,1.75rem)] sm:text-2xl lg:text-3xl
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
               {data.tagline}
             </h2>
           </div>
         )}
 
-        {data.description && (
+        {data?.description && (
           <div className="overflow-hidden">
-            <p className="text-[clamp(1rem,2.6vw,1.125rem)] lg:text-xl text-white leading-relaxed font-light max-w-[60ch] sm:max-w-[65ch] mx-auto drop-shadow-sm">
+            <p
+              className="
+                text-white font-light drop-shadow-sm mx-auto leading-relaxed
+                text-[clamp(0.98rem,2.6vw,1.125rem)] sm:text-lg lg:text-xl
+                max-w-[60ch] sm:max-w-[65ch]
+              "
+              style={{
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale"
+              }}
+            >
               {data.description}
             </p>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6">
-          {data.primaryCta ? (
-            data.primaryCta.url && data.primaryCta.url.startsWith("http") ? (
-              <a
-                href={data.primaryCta.url}
-                target={data.primaryCta.newTab ? "_blank" : "_self"}
-                rel={data.primaryCta.newTab ? "noopener noreferrer" : ""}
-                className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] hover:from-amber-600 hover:to-amber-700 transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                <span className="relative z-10">{data.primaryCta.text}</span>
-              </a>
-            ) : (
-              <button
-                onClick={() => {
-                  if (data.primaryCta.url && data.primaryCta.url.startsWith("#")) {
-                    scrollToSection(data.primaryCta.url.replace("#", ""));
-                  } else if (data.primaryCta.url && data.primaryCta.url.startsWith("scroll:")) {
-                    scrollToSection(data.primaryCta.url.replace("scroll:", ""));
-                  } else {
-                    window.open("https://texasfencingacademy.glide.page", "_blank");
-                  }
-                }}
-                className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] hover:from-amber-600 hover:to-amber-700 transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                <span className="relative z-10">{data.primaryCta.text}</span>
-              </button>
-            )
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+          {/* Primary CTA */}
+          {data?.primaryCta?.url?.startsWith("http") ? (
+            <a
+              href={data.primaryCta.url}
+              target={data.primaryCta.newTab ? "_blank" : "_self"}
+              rel={data.primaryCta.newTab ? "noopener noreferrer" : ""}
+              className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <span className="relative z-10">{data.primaryCta.text}</span>
+            </a>
           ) : (
             <button
-              onClick={() => window.open("https://texasfencingacademy.glide.page", "_blank")}
-              className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] hover:from-amber-600 hover:to-amber-700 transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
+              onClick={handlePrimaryCTA}
+              className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 hover:from-amber-600 hover:to-amber-700 transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <span className="relative z-10">Schedule Private Lesson</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <span className="relative z-10">
+                {data?.primaryCta?.text || "Schedule Private Lesson"}
+              </span>
             </button>
           )}
 
-          {data.secondaryCta ? (
-            <button
-              onClick={runSecondary}
-              className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-[1.03] hover:shadow-lg backdrop-blur-sm transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10">{data.secondaryCta.text}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => scrollToSection("private-lessons-info")}
-              className="group relative px-7 sm:px-8 py-3.5 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-[1.03] hover:shadow-lg backdrop-blur-sm transition-all duration-300 text-base sm:text-lg min-w-[200px] overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10">Learn More</span>
-            </button>
-          )}
+          {/* Secondary CTA */}
+          <button
+            onClick={data?.secondaryCta ? runSecondary : () => scrollToSection("private-lessons-info")}
+            className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-transparent border-2 border-white/70 text-white font-semibold rounded-xl hover:border-amber-400 hover:bg-amber-400/10 hover:scale-105 hover:shadow-lg backdrop-blur-sm transition-all duration-500 text-base sm:text-lg w-full sm:w-auto sm:min-w-[200px] overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <span className="relative z-10">
+              {data?.secondaryCta?.text || "Learn More"}
+            </span>
+          </button>
         </div>
       </div>
-
-      <style jsx>{`
-        .no-animations * {
-          animation-duration: 0s !important;
-          transition-duration: 0s !important;
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </section>
   );
 }
+
 
 function PrivateLessonInformationSection() {
   const handleBookingClick = () => {
