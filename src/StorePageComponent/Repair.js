@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useCart } from './Cart/CartContex'
+import { sanityFetch } from '../Sanity/sanityClient'
 
 const repairData = [
   {
@@ -255,25 +256,12 @@ function RepairsFilters({ selectedCategory, onCategoryChange, sortBy, onSortChan
   )
 }
 
-function RepairCard({ item, index, loaded, onViewDetails }) {
+function RepairCard({ item, index, loaded, onRequestService }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { addToCart, cartItems } = useCart();
 
-  const handleAddToCart = (e) => {
+  const handlePurchase = (e) => {
     e.stopPropagation();
-    if (getItemQuantity() === 0) {
-      addToCart(item);
-    }
-  };
-
-  const getItemQuantity = () => {
-    const cartItem = cartItems.find(cartItem => cartItem.id === item.id);
-    return cartItem ? cartItem.quantity : 0;
-  };
-
-  const handleViewDetails = (e) => {
-    e.stopPropagation();
-    onViewDetails && onViewDetails(item);
+    onRequestService && onRequestService(item);
   };
 
   return (
@@ -281,7 +269,7 @@ function RepairCard({ item, index, loaded, onViewDetails }) {
       className={`
         group relative bg-white rounded-lg md:rounded-xl shadow-sm border border-slate-200 overflow-hidden 
         hover:shadow-lg hover:-translate-y-1 hover:scale-[1.01] transition-all duration-700 ease-out
-        flex flex-col min-h-[350px] md:min-h-[400px] cursor-pointer
+        flex flex-col min-h-[350px] md:min-h-[400px]
         ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
       `}
       style={{
@@ -289,7 +277,6 @@ function RepairCard({ item, index, loaded, onViewDetails }) {
         animationDuration: "1000ms",
         animationDelay: `${index * 120}ms`
       }}
-      onClick={handleViewDetails}
     >
       {/* Subtle top accent */}
       <div className="absolute top-0 left-4 right-4 md:left-6 md:right-6 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
@@ -304,7 +291,7 @@ function RepairCard({ item, index, loaded, onViewDetails }) {
         )}
         <img 
           src={item.image} 
-          alt={item.title}
+          alt={item.imageAlt || item.title}
           onLoad={() => setImageLoaded(true)}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" 
         />
@@ -366,67 +353,115 @@ function RepairCard({ item, index, loaded, onViewDetails }) {
         {/* Action section - mobile responsive */}
         <div className="mt-auto pt-2 md:pt-3 border-t border-slate-100">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 flex items-center">
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               Quality guaranteed
             </span>
             
-            {/* Action buttons */}
-            <div className="flex items-center space-x-2">
-              {/* Request Service button */}
+            {/* Purchase button */}
+            <div className="flex items-center">
               <button 
-                onClick={handleAddToCart}
-                className={`
-                  group/btn relative overflow-hidden px-2.5 md:px-3 py-1.5 rounded-lg font-medium text-xs md:text-sm transition-all duration-300
-                  ${getItemQuantity() > 0
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-slate-100 text-slate-700 hover:bg-amber-500 hover:text-white'
-                  }
-                `}
-                disabled={getItemQuantity() > 0}
+                onClick={handlePurchase}
+                className="group/btn relative overflow-hidden px-4 md:px-6 py-2 md:py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold text-xs md:text-sm transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
               >
-                <span className="flex items-center space-x-1 md:space-x-1.5">
-                  {getItemQuantity() > 0 ? (
+                <span className="flex items-center space-x-1.5 md:space-x-2">
+                  {item.paymentLink ? (
                     <>
-                      <svg className="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
-                      <span className="hidden sm:inline">Requested</span>
-                      <span className="sm:hidden">✓</span>
+                      <span className="hidden sm:inline">Buy Now</span>
+                      <span className="sm:hidden">Buy</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
-                      <span>Request</span>
+                      <span className="hidden sm:inline">Get Quote</span>
+                      <span className="sm:hidden">Quote</span>
                     </>
                   )}
                 </span>
-              </button>
-
-              {/* Details button */}
-              <button 
-                onClick={handleViewDetails}
-                className="px-2.5 md:px-3 py-1.5 text-xs md:text-sm text-slate-600 hover:text-amber-600 transition-colors duration-300"
-              >
-                Details
+                
+                {/* Button hover effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 -z-10"></div>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Subtle bottom accent */}
-      <div className="h-0.5 bg-gradient-to-r from-amber-400/50 to-amber-500/50 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+      {/* Enhanced bottom accent for purchase focus */}
+      <div className="h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
   )
 }
 
 export default function RepairsPage() {
   const [loaded, setLoaded] = useState(false)
+  const [repairData, setRepairData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState("All Repairs")
   const [sortBy, setSortBy] = useState("recommended")
   const [searchTerm, setSearchTerm] = useState("")
+
+  // Fetch repair data from Sanity
+  useEffect(() => {
+    const fetchRepairs = async () => {
+      try {
+        setLoading(true)
+        const query = `
+          *[_type == "repair" && isActive == true] | order(sortOrder asc) {
+            _id,
+            repairId,
+            title,
+            price,
+            category,
+            description,
+            "image": image.asset->url,
+            "imageAlt": image.alt,
+            turnaround,
+            badge,
+            priceId,
+            paymentLink,
+            isActive,
+            sortOrder
+          }
+        `
+        
+        const repairs = await sanityFetch(query)
+        
+        // Transform Sanity data to match existing component structure
+        const transformedRepairs = repairs.map(repair => ({
+          id: repair.repairId,
+          title: repair.title,
+          price: repair.price,
+          category: repair.category,
+          description: repair.description,
+          image: repair.image,
+          imageAlt: repair.imageAlt,
+          turnaround: repair.turnaround,
+          badge: repair.badge,
+          priceId: repair.priceId,
+          paymentLink: repair.paymentLink
+        }))
+        
+        setRepairData(transformedRepairs)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching repairs:', err)
+        setError('Failed to load repair services. Please try again later.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRepairs()
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -436,12 +471,21 @@ export default function RepairsPage() {
   }, [])
 
   const handleRequestService = (item) => {
-    console.log('Service requested for:', item)
+    if (item.paymentLink) {
+      // Redirect to Stripe payment link
+      window.open(item.paymentLink, '_blank')
+    } else {
+      console.log('Service requested for:', item)
+      // Handle custom booking/request logic
+    }
   }
 
   const handleViewDetails = (item) => {
     console.log('View details for:', item)
   }
+
+  // Get unique categories from fetched data
+  const categories = ["All Repairs", ...new Set(repairData.map(item => item.category))]
 
   // Enhanced filter and sort logic
   const filteredAndSortedItems = repairData
@@ -466,6 +510,7 @@ export default function RepairsPage() {
           return b.id - a.id
         case "turnaround":
           const getDays = (turnaround) => {
+            if (turnaround.toLowerCase().includes('same day')) return 0
             const match = turnaround.match(/(\d+)-?(\d+)?\s*days?/i)
             return match ? parseInt(match[1]) : 999
           }
@@ -483,6 +528,47 @@ export default function RepairsPage() {
       }
     })
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+        <RepairsHeroSection />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600 text-lg">Loading repair services...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+        <RepairsHeroSection />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">Unable to Load Services</h3>
+            <p className="text-slate-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <RepairsHeroSection />
@@ -494,6 +580,7 @@ export default function RepairsPage() {
         onSortChange={setSortBy}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        categories={categories} // Pass dynamic categories
       />
 
       {/* Enhanced Info Banner - mobile responsive */}

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import EquipmentStore from "./Equipment";
 import RepairsPage from "./Repair";
-import CheckoutPage from "./CheckoutPage";
 import { useCart } from "./Cart/CartContex";
 import homepageLogo from "../assets/homepagelogo.PNG";
 
@@ -16,12 +15,7 @@ const storeSections = [
     id: "repairs",
     label: "Repairs",
     description: "Professional repairs for all your fencing equipment.",
-  },
-  {
-    id: "checkout",
-    label: "Checkout",
-    description: "Review and complete your purchase.",
-  },
+  }
 ];
 
 export default function StoreContainer() {
@@ -72,8 +66,6 @@ export default function StoreContainer() {
         return <EquipmentStore />;
       case "repairs":
         return <RepairsPage />;
-      case "checkout":
-        return <CheckoutPage onNavigateToSection={handleSectionChange} />;
       default:
         return <EquipmentStore />;
     }
